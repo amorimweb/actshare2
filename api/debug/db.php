@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../includes/response.php';
 require_once __DIR__ . '/../../includes/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') methodNotAllowed();
