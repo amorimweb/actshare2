@@ -66,8 +66,8 @@
   <main class="flex-1 overflow-auto">
     <div class="p-8">
 
-<script src="<?= BASE_PATH ?>/assets/js/auth.js"></script>
-<script src="<?= BASE_PATH ?>/assets/js/api.js"></script>
+<script src="<?= BASE_PATH ?>/assets/js/auth.js?v=2"></script>
+<script src="<?= BASE_PATH ?>/assets/js/api.js?v=2"></script>
 <script>
   // Protege página admin
   document.addEventListener('DOMContentLoaded', () => {

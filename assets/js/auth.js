@@ -1,6 +1,6 @@
 // Gerenciamento de autenticação (substitui stores/auth.ts)
 const AUTH_KEY = 'act_user';
-const _B = () => (typeof BASE !== 'undefined' ? BASE : '');
+var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 
 function authGetUser() {
   try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }

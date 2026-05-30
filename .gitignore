@@ -9,6 +9,11 @@ vendor/
 *.log
 logs/
 tmp/
+api_response.txt
+
+# Artefatos locais
+*.zip
+*.docx
 
 # Sistema operacional
 .DS_Store

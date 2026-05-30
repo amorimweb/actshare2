@@ -1,7 +1,7 @@
 // Lógica de cursos (substitui stores/courses.ts e stores/categories.ts)
 let _cursos     = null;
 let _categorias = null;
-const _B = () => (typeof BASE !== 'undefined' ? BASE : '');
+var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 
 async function fetchCursos(params = {}) {
   if (_cursos) return _cursos;

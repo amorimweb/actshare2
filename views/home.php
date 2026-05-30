@@ -73,7 +73,7 @@
   </div>
 </section>
 
-<script src="<?= BASE_PATH ?>/assets/js/cursos.js"></script>
+<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=2"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     carregarCursosDestaque('cursos-grid', 4);

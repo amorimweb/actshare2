@@ -1,5 +1,5 @@
 // Lógica do painel admin (substitui stores + pages admin/*.vue)
-const _B = () => (typeof BASE !== 'undefined' ? BASE : '');
+var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ============ CURSOS ADMIN ============

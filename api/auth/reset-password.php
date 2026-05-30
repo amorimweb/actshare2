@@ -13,6 +13,8 @@ $stmt = $db->prepare('SELECT id FROM usuarios WHERE email = ? AND ativo = 1 LIMI
 $stmt->execute([$email]);
 $user = $stmt->fetch();
 
+$response = ['success' => true];
+
 // Retorna sucesso mesmo se e-mail não existe (segurança)
 if ($user) {
     $token     = bin2hex(random_bytes(32));
@@ -26,6 +28,10 @@ if ($user) {
 
     $link = SITE_URL . '/nova-senha?token=' . $token;
     error_log("[reset-password] Link: $link");
+
+    if (str_contains(SITE_URL, 'localhost')) {
+        $response['debug_link'] = $link;
+    }
 }
 
-jsonOk(['success' => true]);
+jsonOk($response);

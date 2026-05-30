@@ -1,5 +1,5 @@
 // Componente de quiz interativo (substitui LessonQuiz.vue)
-const _B = () => (typeof BASE !== 'undefined' ? BASE : '');
+var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function carregarQuiz(aulaId, matriculaId, containerId) {

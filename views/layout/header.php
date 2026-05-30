@@ -148,5 +148,5 @@ document.addEventListener('click', () => {
 </script>
 
 <div class="pt-16">
-<script src="<?= BASE_PATH ?>/assets/js/auth.js"></script>
-<script src="<?= BASE_PATH ?>/assets/js/api.js"></script>
+<script src="<?= BASE_PATH ?>/assets/js/auth.js?v=2"></script>
+<script src="<?= BASE_PATH ?>/assets/js/api.js?v=2"></script>

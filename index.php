@@ -69,7 +69,7 @@ if ($viewFile && file_exists($viewFile)) {
     echo '<div class="max-w-xl mx-auto px-4 py-24 text-center">';
     echo '<h1 class="text-6xl font-bold text-gray-200 mb-4">404</h1>';
     echo '<p class="text-gray-500 text-lg mb-6">Página não encontrada.</p>';
-    echo '<a href="/actshare/" class="bg-primary text-white font-medium px-6 py-3 rounded-lg hover:bg-blue-900 transition-colors">Voltar ao início</a>';
+    echo '<a href="' . BASE_PATH . '/" class="bg-primary text-white font-medium px-6 py-3 rounded-lg hover:bg-blue-900 transition-colors">Voltar ao início</a>';
     echo '</div>';
     require __DIR__ . '/views/layout/footer.php';
 }

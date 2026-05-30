@@ -1,5 +1,5 @@
 // Player de aulas (substitui painel/curso/[id].vue)
-const _B = () => (typeof BASE !== 'undefined' ? BASE : '');
+var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 
 let playerData   = null;
 let aulaAtual    = null;

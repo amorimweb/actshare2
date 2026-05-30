@@ -40,7 +40,7 @@
   </section>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/painel.js"></script>
+<script src="<?= BASE_PATH ?>/assets/js/painel.js?v=2"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const user = authGetUser();

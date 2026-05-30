@@ -1,5 +1,5 @@
 // Lógica do painel do aluno (substitui stores/student.ts)
-const _B = () => (typeof BASE !== 'undefined' ? BASE : '');
+var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 
 function esc(s) {
   if (!s) return '';

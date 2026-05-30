@@ -9,8 +9,13 @@
         <p class="text-gray-500 text-sm mt-1">Enviaremos um link para redefinir sua senha</p>
       </div>
 
-      <div id="success-msg" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3 mb-4">
-        Se o e-mail estiver cadastrado, você receberá o link em breve.
+      <div id="success-msg" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3 mb-4 space-y-2">
+        <p>Se o e-mail estiver cadastrado, você receberá o link em breve.</p>
+        <div id="debug-block" class="hidden bg-blue-50 border border-blue-150 rounded-xl p-3.5 mt-2 text-left space-y-1.5 text-blue-800">
+          <p class="text-[10px] font-bold uppercase tracking-wide">Ambiente de Testes (Localhost)</p>
+          <p class="text-xs text-blue-700">Clique no link abaixo para criar uma nova senha:</p>
+          <a href="#" id="debug-link" class="text-xs font-bold text-primary hover:underline break-all block"></a>
+        </div>
       </div>
 
       <form id="reset-form" class="space-y-5">
@@ -45,9 +50,15 @@
     err.classList.add('hidden');
 
     try {
-      await apiPost(BASE + '/api/auth/reset-password', { email: document.getElementById('reset-email').value });
+      const res = await apiPost(BASE + '/api/auth/reset-password', { email: document.getElementById('reset-email').value });
       document.getElementById('reset-form').classList.add('hidden');
       document.getElementById('success-msg').classList.remove('hidden');
+      
+      if (res.debug_link) {
+        document.getElementById('debug-block').classList.remove('hidden');
+        document.getElementById('debug-link').href = res.debug_link;
+        document.getElementById('debug-link').textContent = res.debug_link;
+      }
     } catch (ex) {
       err.textContent = ex.message || 'Erro ao enviar link.';
       err.classList.remove('hidden');

@@ -20,7 +20,7 @@
   </table>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=2"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarUsuariosAdmin);
 </script>
