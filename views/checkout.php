@@ -188,14 +188,16 @@ require __DIR__ . '/layout/header.php';
   function verificarAutenticacao() {
     userLogged = authGetUser();
     if (!userLogged) {
-      // Redireciona para o login com retorno
-      window.location.href = BASE + '/login?redirect=' + encodeURIComponent(BASE + '/checkout');
+      // Redireciona para o cadastro com retorno ao checkout
+      window.location.href = BASE + '/registro?redirect=' + encodeURIComponent(BASE + '/checkout');
       return;
     }
 
     // Preenche dados do usuário
     document.getElementById('bill-nome').value = userLogged.nome || '';
     document.getElementById('bill-email').value = userLogged.email || '';
+    document.getElementById('bill-whatsapp').value = userLogged.telefone || '';
+    document.getElementById('bill-documento').value = userLogged.documento || '';
 
     // Tenta carregar informações anteriores se salvas (CPF/WhatsApp) ou deixa em branco para preencher
     carregarCarrinhoCheckout();

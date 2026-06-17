@@ -12,7 +12,7 @@ $db = getDB();
 
 // 1. Busca matrícula correspondente ao aluno logado e à aula do curso
 $stmt = $db->prepare('
-    SELECT m.id, m.com_prova, a.e_prova 
+    SELECT m.id, m.com_prova, a.e_prova, a.tempo_limite_minutos, a.bloquear_proctoring
     FROM matriculas m 
     JOIN modulos mo ON m.curso_id = mo.curso_id 
     JOIN aulas a ON mo.id = a.modulo_id 
@@ -126,5 +126,7 @@ jsonOk([
     'tentativas_restantes' => $tentativasRestantes,
     'finalizado'           => $finalizado,
     'com_prova'            => (bool)$matricula['com_prova'],
-    'e_prova'              => (bool)$matricula['e_prova']
+    'e_prova'              => (bool)$matricula['e_prova'],
+    'tempo_limite_minutos' => (int)$matricula['tempo_limite_minutos'],
+    'bloquear_proctoring'  => (bool)$matricula['bloquear_proctoring']
 ]);

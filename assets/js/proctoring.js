@@ -327,8 +327,32 @@ function registrarListenersProctoring() {
       registrarInfracao('atalho_bloqueado', `Atalho de teclado interceptado: ${e.key}`);
       mostrarAvisoToast(`Ação bloqueada: Atalho ${e.key} não permitido!`);
     }
+
+    // Bloqueia PrintScreen
+    if (e.key === 'PrintScreen' || e.keyCode === 44) {
+      e.preventDefault();
+      navigator.clipboard.writeText("").catch(() => {});
+      registrarInfracao('print_screen', 'Tentativa de tirar Print Screen detectada.');
+      mostrarAvisoToast('Ação bloqueada: Print Screen não permitido!');
+    }
   };
   window.addEventListener('keydown', proctoringState.eventListeners.keydown);
+
+  // F. Detecção de Mouse Sair da Página (mouseleave)
+  proctoringState.eventListeners.mouseleave = () => {
+    registrarInfracao('mouse_fora', 'Mouse saiu dos limites da janela da avaliação.');
+  };
+  document.addEventListener('mouseleave', proctoringState.eventListeners.mouseleave);
+
+  // G. Detecção do PrintScreen em keyup
+  proctoringState.eventListeners.keyup = (e) => {
+    if (e.key === 'PrintScreen' || e.keyCode === 44) {
+      navigator.clipboard.writeText("").catch(() => {});
+      registrarInfracao('print_screen', 'Tentativa de tirar Print Screen detectada.');
+      mostrarAvisoToast('Ação bloqueada: Print Screen não permitido!');
+    }
+  };
+  window.addEventListener('keyup', proctoringState.eventListeners.keyup);
 }
 
 // Remove todos os event listeners ao fechar ou resetar a prova
@@ -342,6 +366,12 @@ function removerListenersProctoring() {
   }
   if (proctoringState.eventListeners.blur) {
     window.removeEventListener('blur', proctoringState.eventListeners.blur);
+  }
+  if (proctoringState.eventListeners.mouseleave) {
+    document.removeEventListener('mouseleave', proctoringState.eventListeners.mouseleave);
+  }
+  if (proctoringState.eventListeners.keyup) {
+    window.removeEventListener('keyup', proctoringState.eventListeners.keyup);
   }
   
   const container = document.getElementById('quiz-container');

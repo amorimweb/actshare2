@@ -74,6 +74,7 @@ $routes = [
     // master
     ['GET',    'master/alunos',        __DIR__ . '/master/alunos.php'],
     ['POST',   'master/aluno',         __DIR__ . '/master/aluno.php'],
+    ['DELETE', 'master/aluno/:id',     __DIR__ . '/master/aluno.php'],
     ['GET',    'master/check-role',    __DIR__ . '/master/check-role.php'],
     ['GET',    'master/cursos',        __DIR__ . '/master/cursos.php'],
     ['GET',    'master/cursos/:id',    __DIR__ . '/master/curso-detalhe.php'],
@@ -81,6 +82,9 @@ $routes = [
     ['POST',   'master/cursos/:id/participante',  __DIR__ . '/master/participantes.php'],
     ['DELETE', 'master/cursos/:id/participante/:aluno_id', __DIR__ . '/master/participantes.php'],
     ['POST',   'master/cursos/:id/participar', __DIR__ . '/master/participar.php'],
+    ['POST',   'master/salvar-certificado-acesso', __DIR__ . '/master/salvar-certificado-acesso.php'],
+    ['GET',    'master/relatorio-curso/:id',    __DIR__ . '/master/relatorio-curso.php'],
+    ['GET',    'master/alunos/:aluno_id/cursos/:curso_id/avaliacoes', __DIR__ . '/master/avaliacoes.php'],
     // checkout
     ['POST',   'checkout/validar-cupom',     __DIR__ . '/checkout/validar-cupom.php'],
     ['POST',   'checkout/criar-pedido',      __DIR__ . '/checkout/criar-pedido.php'],
@@ -89,6 +93,21 @@ $routes = [
     // admin
     ['GET',    'admin/usuarios',       __DIR__ . '/admin/usuarios.php'],
     ['PATCH',  'admin/usuarios',       __DIR__ . '/admin/usuarios.php'],
+    ['GET',    'admin/cupons',         __DIR__ . '/admin/cupons.php'],
+    ['POST',   'admin/cupons',         __DIR__ . '/admin/cupons.php'],
+    ['DELETE', 'admin/cupons/:id',     __DIR__ . '/admin/cupons_item.php'],
+    ['GET',    'admin/perguntas',      __DIR__ . '/admin/perguntas.php'],
+    ['POST',   'admin/perguntas',      __DIR__ . '/admin/perguntas.php'],
+    ['PUT',    'admin/perguntas/:id',  __DIR__ . '/admin/perguntas_item.php'],
+    ['DELETE', 'admin/perguntas/:id',  __DIR__ . '/admin/perguntas_item.php'],
+    ['GET',    'admin/satisfacao/relatorio', __DIR__ . '/admin/satisfacao.php'],
+    ['GET',    'admin/certificados',   __DIR__ . '/admin/certificados.php'],
+    ['POST',   'admin/certificados',   __DIR__ . '/admin/certificados.php'],
+
+    // aluno satisfacao / certificados
+    ['GET',    'aluno/satisfacao/status/:matricula_id', __DIR__ . '/aluno/satisfacao.php'],
+    ['POST',   'aluno/satisfacao/responder',           __DIR__ . '/aluno/satisfacao.php'],
+    ['GET',    'certificados/validar/:codigo',         __DIR__ . '/certificados/validar.php'],
 
     // debug
     ['GET',    'debug/db',             __DIR__ . '/debug/db.php'],

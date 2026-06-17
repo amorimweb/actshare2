@@ -285,7 +285,24 @@ require __DIR__ . '/layout/header.php';
     btn.textContent = '...';
 
     try {
-      const res = await apiPost(BASE + '/api/checkout/validar-cupom', { codigo });
+      const cart = getCarrinho();
+      let subtotalBruto = 0;
+      let descontoProg = 0;
+      cart.forEach(item => {
+        const preco = parseFloat(item.preco);
+        const subtotalItem = preco * item.vagas;
+        subtotalBruto += subtotalItem;
+        let pct = 0;
+        if (item.vagas >= 2 && item.vagas <= 5) pct = 5;
+        else if (item.vagas >= 6 && item.vagas <= 10) pct = 10;
+        else if (item.vagas > 10) pct = 15;
+        if (pct > 0) {
+          descontoProg += subtotalItem * (pct / 100);
+        }
+      });
+      const saldo = subtotalBruto - descontoProg;
+
+      const res = await apiPost(BASE + '/api/checkout/validar-cupom', { codigo, total: saldo });
       cupomAtivo = res.cupom;
       localStorage.setItem(CUPOM_KEY, JSON.stringify(cupomAtivo));
       

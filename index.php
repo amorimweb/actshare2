@@ -32,6 +32,11 @@ $routes = [
     'admin/cursos'                  => 'admin/cursos',
     'admin/categorias'              => 'admin/categorias',
     'admin/usuarios'                => 'admin/usuarios',
+    'admin/perguntas'               => 'admin/perguntas',
+    'admin/cupons'                  => 'admin/cupons',
+    'admin/certificados'            => 'admin/certificados',
+    'admin/satisfacao'              => 'admin/satisfacao',
+    'validar-certificado'           => 'validar-certificado',
 ];
 
 // Rotas dinâmicas com parâmetro

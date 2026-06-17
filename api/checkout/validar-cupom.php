@@ -8,6 +8,7 @@ requireAuth();
 
 $body = json_decode(file_get_contents('php://input'), true) ?? [];
 $codigo = trim($body['codigo'] ?? '');
+$total = isset($body['total']) ? (float)$body['total'] : null;
 
 if (!$codigo) {
     jsonError('Código do cupom é obrigatório.', 400);
@@ -28,6 +29,11 @@ if ($cupom) {
     // Valida limite de usos
     if ($cupom['limite_uso'] !== null && $cupom['usos'] >= $cupom['limite_uso']) {
         jsonError('Este cupom atingiu o limite máximo de utilizações.', 400);
+    }
+    
+    // Valida se o desconto fixo excede o total do carrinho
+    if ($total !== null && $cupom['tipo'] === 'fixo' && (float)$cupom['valor'] > $total) {
+        jsonError('O valor do cupom excede o valor total do carrinho.', 400);
     }
     
     jsonOk([

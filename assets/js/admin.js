@@ -31,12 +31,23 @@ async function carregarCursosAdmin() {
 
     // Preenche select de categorias no modal
     const catSelect = document.getElementById('curso-categoria');
-    if (catSelect) {
+    if (catSelect && catSelect.children.length <= 1) {
       const cats = await apiFetch(_B() + '/api/categorias');
       cats.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id; opt.textContent = c.nome;
         catSelect.appendChild(opt);
+      });
+    }
+
+    // Preenche select de instrutores no modal
+    const instSelect = document.getElementById('curso-instrutor');
+    if (instSelect && instSelect.children.length <= 1) {
+      const insts = await apiFetch(_B() + '/api/instrutores');
+      insts.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.id; opt.textContent = i.nome;
+        instSelect.appendChild(opt);
       });
     }
   } catch (e) {
@@ -48,12 +59,19 @@ function abrirModalNovoCurso() {
   document.getElementById('modal-titulo').textContent = 'Novo Curso';
   document.getElementById('curso-id').value    = '';
   document.getElementById('curso-titulo').value = '';
+  document.getElementById('curso-codigo').value = '';
+  document.getElementById('curso-nome-certificado').value = '';
+  document.getElementById('curso-prazo-acesso').value = '';
   document.getElementById('curso-descricao').value = '';
   document.getElementById('curso-thumb').value  = '';
   document.getElementById('curso-carga').value  = '0';
   document.getElementById('curso-preco').value  = '0';
+  document.getElementById('curso-categoria').value = '';
+  document.getElementById('curso-instrutor').value = '';
   document.getElementById('curso-ativo').checked   = true;
   document.getElementById('curso-publico').checked = false;
+  document.getElementById('curso-disponivel-loja').checked = true;
+  document.getElementById('curso-exibir-instrutor').checked = false;
   document.getElementById('modal-curso').classList.remove('hidden');
 }
 
@@ -73,13 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const id    = document.getElementById('curso-id').value;
       const body  = {
         titulo:              document.getElementById('curso-titulo').value,
+        codigo:              document.getElementById('curso-codigo').value.trim().toUpperCase(),
+        nome_certificado:    document.getElementById('curso-nome-certificado').value.trim() || null,
+        prazo_acesso_dias:   document.getElementById('curso-prazo-acesso').value !== '' ? parseInt(document.getElementById('curso-prazo-acesso').value) : null,
         descricao:           document.getElementById('curso-descricao').value,
         thumb_url:           document.getElementById('curso-thumb').value || null,
         carga_horaria_horas: parseInt(document.getElementById('curso-carga').value) || 0,
         preco:               parseFloat(document.getElementById('curso-preco').value) || 0,
         categoria_id:        document.getElementById('curso-categoria').value || null,
+        instrutor_id:        document.getElementById('curso-instrutor').value || null,
         ativo:               document.getElementById('curso-ativo').checked ? 1 : 0,
         publico:             document.getElementById('curso-publico').checked ? 1 : 0,
+        disponivel_loja:     document.getElementById('curso-disponivel-loja').checked ? 1 : 0,
+        exibir_instrutor:    document.getElementById('curso-exibir-instrutor').checked ? 1 : 0,
       };
 
       try {
@@ -212,9 +236,14 @@ function renderModulosAdmin() {
       <div class="divide-y divide-gray-100">
         ${(mod.aulas || []).map(a => `
           <div class="flex items-center justify-between px-5 py-2.5">
-            <span class="text-sm text-gray-700">${esc(a.titulo)}</span>
+            <span class="text-sm text-gray-700">
+              <span class="font-bold text-xs text-slate-400 mr-1.5">
+                ${a.e_prova ? '🎯 [PROVA]' : (a.tipo === 'quiz' ? '📖 [QUIZZ]' : `[${a.tipo.toUpperCase()}]`)}
+              </span>
+              ${esc(a.titulo)}
+            </span>
             <div class="flex gap-2">
-              <button onclick="editarAula(${a.id}, '${esc(a.titulo)}', '${esc(a.video_url||'')}', '${esc(a.descricao||'')}', ${a.ordem||0}, ${a.duracao_min||0}, ${mod.id})" class="text-xs text-gray-500 hover:underline">Editar</button>
+              <button onclick="editarAulaAdmin(${a.id}, ${mod.id})" class="text-xs text-gray-500 hover:underline">Editar</button>
               <button onclick="excluirAula(${a.id})" class="text-xs text-red-500 hover:underline">Excluir</button>
             </div>
           </div>
@@ -274,22 +303,47 @@ function abrirModalAula(moduloId) {
   document.getElementById('aula-id').value       = '';
   document.getElementById('aula-modulo-id').value = moduloId;
   document.getElementById('aula-titulo').value   = '';
+  document.getElementById('aula-tipo').value     = 'video';
+  document.getElementById('aula-e-prova').value  = '0';
   document.getElementById('aula-url').value      = '';
   document.getElementById('aula-descricao').value = '';
   document.getElementById('aula-ordem').value    = '0';
   document.getElementById('aula-duracao').value  = '0';
+  document.getElementById('aula-quizz-qtd-perguntas').value = 1;
+  document.getElementById('aula-exemplar-global').checked = false;
+  document.getElementById('aula-nota-corte-tipo').value = 'percentual';
+  document.getElementById('aula-nota-corte-valor').value = 70;
+  document.getElementById('aula-tempo-limite').value = 0;
+  document.getElementById('aula-bloquear-proctoring').checked = false;
+
+  if (typeof toggleCamposTipoAula === 'function') toggleCamposTipoAula();
   document.getElementById('modal-aula').classList.remove('hidden');
 }
 
-function editarAula(id, titulo, url, descricao, ordem, duracao, moduloId) {
+function editarAulaAdmin(aulaId, moduloId) {
+  const mod = _cursoAdminData.modulos.find(m => m.id === moduloId);
+  if (!mod) return;
+  const a = mod.aulas.find(l => l.id === aulaId);
+  if (!a) return;
+  
   document.getElementById('aula-modal-titulo').textContent = 'Editar Aula';
-  document.getElementById('aula-id').value       = id;
+  document.getElementById('aula-id').value       = a.id;
   document.getElementById('aula-modulo-id').value = moduloId;
-  document.getElementById('aula-titulo').value   = titulo;
-  document.getElementById('aula-url').value      = url;
-  document.getElementById('aula-descricao').value = descricao;
-  document.getElementById('aula-ordem').value    = ordem;
-  document.getElementById('aula-duracao').value  = duracao;
+  document.getElementById('aula-titulo').value   = a.titulo;
+  document.getElementById('aula-tipo').value     = a.tipo || 'video';
+  document.getElementById('aula-e-prova').value  = a.e_prova == 1 ? '1' : '0';
+  document.getElementById('aula-url').value      = a.video_url || '';
+  document.getElementById('aula-descricao').value = a.descricao || '';
+  document.getElementById('aula-ordem').value    = a.ordem || 0;
+  document.getElementById('aula-duracao').value  = a.duracao_min || 0;
+  document.getElementById('aula-quizz-qtd-perguntas').value = a.quizz_qtd_perguntas || 1;
+  document.getElementById('aula-exemplar-global').checked = a.exemplar_global == 1;
+  document.getElementById('aula-nota-corte-tipo').value = a.nota_corte_tipo || 'percentual';
+  document.getElementById('aula-nota-corte-valor').value = a.nota_corte_valor || 70;
+  document.getElementById('aula-tempo-limite').value = a.tempo_limite_minutos || 0;
+  document.getElementById('aula-bloquear-proctoring').checked = a.bloquear_proctoring == 1;
+
+  if (typeof toggleCamposTipoAula === 'function') toggleCamposTipoAula();
   document.getElementById('modal-aula').classList.remove('hidden');
 }
 
@@ -303,12 +357,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const id       = document.getElementById('aula-id').value;
       const moduloId = document.getElementById('aula-modulo-id').value;
       const body     = {
-        titulo:      document.getElementById('aula-titulo').value,
-        url:         document.getElementById('aula-url').value || null,
-        descricao:   document.getElementById('aula-descricao').value || null,
-        ordem:       parseInt(document.getElementById('aula-ordem').value) || 0,
-        duracao_min: parseInt(document.getElementById('aula-duracao').value) || 0,
-        modulo_id:   moduloId,
+        titulo:               document.getElementById('aula-titulo').value,
+        url:                  document.getElementById('aula-url').value || null,
+        descricao:            document.getElementById('aula-descricao').value || null,
+        ordem:                parseInt(document.getElementById('aula-ordem').value) || 0,
+        duracao_min:          parseInt(document.getElementById('aula-duracao').value) || 0,
+        modulo_id:            moduloId,
+        tipo:                 document.getElementById('aula-tipo').value,
+        e_prova:              parseInt(document.getElementById('aula-e-prova').value) || 0,
+        quizz_qtd_perguntas:  parseInt(document.getElementById('aula-quizz-qtd-perguntas').value) || 1,
+        exemplar_global:      document.getElementById('aula-exemplar-global').checked ? 1 : 0,
+        nota_corte_tipo:      document.getElementById('aula-nota-corte-tipo').value,
+        nota_corte_valor:     parseInt(document.getElementById('aula-nota-corte-valor').value) || 70,
+        tempo_limite_minutos: parseInt(document.getElementById('aula-tempo-limite').value) || 0,
+        bloquear_proctoring:  document.getElementById('aula-bloquear-proctoring').checked ? 1 : 0,
       };
       try {
         if (id) await apiPut(_B() + '/api/aulas/' + id, body);
@@ -325,4 +387,97 @@ async function excluirAula(id) {
   if (!confirm('Excluir esta aula?')) return;
   try { await apiDelete(_B() + '/api/aulas/' + id); _cursoAdminData = await apiFetch(_B() + '/api/cursos/' + cursoAdminId); renderModulosAdmin(); }
   catch (e) { alert(e.message); }
+}
+
+// ============ CURSO DETALHE EDIT ACTIONS ============
+async function editarCursoInfo() {
+  if (!_cursoAdminData) return;
+
+  // Preenche categorias e instrutores no modal de edição
+  const catSelect = document.getElementById('ec-categoria');
+  if (catSelect && catSelect.children.length <= 1) {
+    const cats = await apiFetch(_B() + '/api/categorias');
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.nome;
+      catSelect.appendChild(opt);
+    });
+  }
+
+  const instSelect = document.getElementById('ec-instrutor');
+  if (instSelect && instSelect.children.length <= 1) {
+    const insts = await apiFetch(_B() + '/api/instrutores');
+    insts.forEach(i => {
+      const opt = document.createElement('option');
+      opt.value = i.id; opt.textContent = i.nome;
+      instSelect.appendChild(opt);
+    });
+  }
+
+  document.getElementById('ec-titulo').value            = _cursoAdminData.titulo || '';
+  document.getElementById('ec-codigo').value            = _cursoAdminData.codigo || '';
+  document.getElementById('ec-nome-certificado').value  = _cursoAdminData.nome_certificado || '';
+  document.getElementById('ec-prazo-acesso').value      = _cursoAdminData.prazo_acesso_dias !== null ? _cursoAdminData.prazo_acesso_dias : '';
+  document.getElementById('ec-descricao').value         = _cursoAdminData.descricao || '';
+  document.getElementById('ec-carga').value             = _cursoAdminData.carga_horaria_horas || 0;
+  document.getElementById('ec-preco').value             = _cursoAdminData.preco || 0;
+  document.getElementById('ec-categoria').value         = _cursoAdminData.categoria_id || '';
+  document.getElementById('ec-instrutor').value         = _cursoAdminData.instrutor_id || '';
+  document.getElementById('ec-thumb').value             = _cursoAdminData.thumb_url || '';
+  document.getElementById('ec-ativo').checked           = _cursoAdminData.ativo == 1;
+  document.getElementById('ec-publico').checked         = _cursoAdminData.publico == 1;
+  document.getElementById('ec-disponivel-loja').checked = _cursoAdminData.disponivel_loja == 1;
+  document.getElementById('ec-exibir-instrutor').checked = _cursoAdminData.exibir_instrutor == 1;
+
+  document.getElementById('ec-form-erro').classList.add('hidden');
+  document.getElementById('modal-editar-curso').classList.remove('hidden');
+}
+
+function fecharModalEditarCurso() {
+  document.getElementById('modal-editar-curso').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const formEc = document.getElementById('form-editar-curso');
+  if (formEc) {
+    formEc.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-salvar-ec');
+      const err = document.getElementById('ec-form-erro');
+      btn.disabled = true; err.classList.add('hidden');
+
+      const body = {
+        titulo:              document.getElementById('ec-titulo').value,
+        codigo:              document.getElementById('ec-codigo').value.trim().toUpperCase(),
+        nome_certificado:    document.getElementById('ec-nome-certificado').value.trim() || null,
+        prazo_acesso_dias:   document.getElementById('ec-prazo-acesso').value !== '' ? parseInt(document.getElementById('ec-prazo-acesso').value) : null,
+        descricao:           document.getElementById('ec-descricao').value,
+        thumb_url:           document.getElementById('ec-thumb').value || null,
+        carga_horaria_horas: parseInt(document.getElementById('ec-carga').value) || 0,
+        preco:               parseFloat(document.getElementById('ec-preco').value) || 0,
+        categoria_id:        document.getElementById('ec-categoria').value || null,
+        instrutor_id:        document.getElementById('ec-instrutor').value || null,
+        ativo:               document.getElementById('ec-ativo').checked ? 1 : 0,
+        publico:             document.getElementById('ec-publico').checked ? 1 : 0,
+        disponivel_loja:     document.getElementById('ec-disponivel-loja').checked ? 1 : 0,
+        exibir_instrutor:    document.getElementById('ec-exibir-instrutor').checked ? 1 : 0,
+      };
+
+      try {
+        await apiPut(_B() + '/api/cursos/' + cursoAdminId, body);
+        fecharModalEditarCurso();
+        await carregarCursoAdmin(cursoAdminId);
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.remove('hidden');
+      } finally { btn.disabled = false; }
+    });
+  }
+});
+
+async function excluirCurso() {
+  if (!confirm('Deseja excluir permanentemente este curso e todos os seus dados? Esta ação não pode ser desfeita.')) return;
+  try {
+    await apiDelete(_B() + '/api/cursos/' + cursoAdminId);
+    window.location.href = _B() + '/admin/cursos';
+  } catch (e) { alert('Erro ao excluir curso: ' + e.message); }
 }

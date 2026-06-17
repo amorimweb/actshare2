@@ -1,22 +1,29 @@
-<?php $pageTitle = 'ActShare — Treinamentos e Educação Corporativa'; ?>
+<?php
+$pageTitle = 'ActShare — Treinamentos e Educação Corporativa';
+$showCourseNav = true;
+?>
 <?php require __DIR__ . '/layout/header.php'; ?>
 
 <!-- Hero -->
-<section class="bg-gradient-to-br from-primary to-blue-800 text-white py-24 px-4">
-  <div class="max-w-4xl mx-auto text-center">
-    <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-      Capacite sua equipe com<br>os melhores treinamentos
-    </h1>
-    <p class="text-xl text-blue-200 mb-10 max-w-2xl mx-auto">
-      Cursos online, treinamentos ao vivo e conteúdo especializado para o mercado corporativo.
-    </p>
-    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="<?= BASE_PATH ?>/cursos" class="bg-secondary text-white font-semibold px-8 py-3 rounded-lg hover:bg-green-600 transition-colors">
-        Ver Cursos
-      </a>
-      <a href="<?= BASE_PATH ?>/registro" class="border-2 border-white text-white font-semibold px-8 py-3 rounded-lg hover:bg-white hover:text-primary transition-colors">
-        Cadastrar-se Grátis
-      </a>
+<section class="relative min-h-[520px] overflow-hidden text-white">
+  <video class="absolute inset-0 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata">
+    <source src="<?= BASE_PATH ?>/assets/img/herovideo.mp4" type="video/mp4">
+  </video>
+  <div class="absolute inset-0 bg-gradient-to-r from-primary/85 via-primary/45 to-black/55"></div>
+
+  <div class="relative z-10 mx-auto flex min-h-[520px] max-w-7xl items-center justify-start px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl text-left">
+      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        Capacite sua equipe com<br>os melhores treinamentos
+      </h1>
+      <p class="max-w-xl text-lg md:text-xl text-blue-50 mb-10">
+        Cursos online, treinamentos ao vivo e conteúdo especializado para o mercado corporativo.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-start">
+        <a href="<?= BASE_PATH ?>/cursos" class="bg-secondary text-white font-semibold px-8 py-3 rounded-lg hover:bg-green-600 transition-colors">
+          Ver Cursos
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -24,7 +31,7 @@
 <!-- Catálogo em destaque -->
 <section class="py-16 px-4 bg-white">
   <div class="max-w-7xl mx-auto">
-    <h2 class="text-3xl font-bold text-gray-800 mb-2">Cursos em Destaque</h2>
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Treinamentos em Destaque</h2>
     <p class="text-gray-500 mb-10">Explore nosso catálogo de treinamentos profissionais.</p>
 
     <div id="cursos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

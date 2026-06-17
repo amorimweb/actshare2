@@ -30,40 +30,70 @@
     <h2 id="modal-titulo" class="text-lg font-bold text-gray-800 mb-5">Novo Curso</h2>
     <form id="form-curso" class="space-y-4">
       <input type="hidden" id="curso-id">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-        <input type="text" id="curso-titulo" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-        <textarea id="curso-descricao" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">URL da Thumbnail</label>
-        <input type="url" id="curso-thumb" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-      </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="col-span-2">
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Título do Curso (Loja) *</label>
+          <input type="text" id="curso-titulo" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Carga Horária (h)</label>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Código *</label>
+          <input type="text" id="curso-codigo" required maxlength="10" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase" placeholder="ISO9001">
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="col-span-2">
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nome para o Certificado</label>
+          <input type="text" id="curso-nome-certificado" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Se vazio, usa o título">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Prazo (Dias)</label>
+          <input type="number" id="curso-prazo-acesso" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ilimitado">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Descrição</label>
+        <textarea id="curso-descricao" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Carga Horária (h)</label>
           <input type="number" id="curso-carga" min="0" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Preço (R$)</label>
           <input type="number" id="curso-preco" min="0" step="0.01" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
         </div>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-        <select id="curso-categoria" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Sem categoria</option>
-        </select>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Categoria</label>
+          <select id="curso-categoria" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white">
+            <option value="">Sem categoria</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Instrutor</label>
+          <select id="curso-instrutor" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white">
+            <option value="">Sem instrutor</option>
+          </select>
+        </div>
       </div>
-      <div class="flex gap-4">
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="curso-ativo" checked class="rounded"> Ativo
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">URL da Imagem de Capa (Thumbnail)</label>
+        <input type="url" id="curso-thumb" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+      </div>
+      <div class="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-3 rounded-lg">
+        <label class="flex items-center gap-2 text-xs font-semibold text-gray-750">
+          <input type="checkbox" id="curso-ativo" checked class="rounded accent-primary"> Ativo
         </label>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="curso-publico" class="rounded"> Público
+        <label class="flex items-center gap-2 text-xs font-semibold text-gray-750">
+          <input type="checkbox" id="curso-publico" class="rounded accent-primary"> Público (Vendas)
+        </label>
+        <label class="flex items-center gap-2 text-xs font-semibold text-gray-750">
+          <input type="checkbox" id="curso-disponivel-loja" checked class="rounded accent-primary"> Disponível na Loja
+        </label>
+        <label class="flex items-center gap-2 text-xs font-semibold text-gray-750">
+          <input type="checkbox" id="curso-exibir-instrutor" class="rounded accent-primary"> Exibir Instrutor
         </label>
       </div>
       <div id="form-erro" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2"></div>

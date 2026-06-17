@@ -50,6 +50,41 @@ if ($bypassAvançar) {
         ON DUPLICATE KEY UPDATE concluida = 1, data_conclusao = COALESCE(data_conclusao, NOW()), updated_at = NOW()
     ');
     $stmt->execute([$matriculaId, $aulaId]);
+
+    // Recalcula progresso geral do curso e atualiza a matrícula
+    $stmtMat = $db->prepare('SELECT curso_id FROM matriculas WHERE id = ? LIMIT 1');
+    $stmtMat->execute([$matriculaId]);
+    $cursoId = (int)$stmtMat->fetchColumn();
+
+    $stmtAulas = $db->prepare('
+        SELECT COUNT(*) AS total 
+        FROM aulas a
+        JOIN modulos m ON a.modulo_id = m.id
+        WHERE m.curso_id = ?
+    ');
+    $stmtAulas->execute([$cursoId]);
+    $totalAulas = (int)$stmtAulas->fetchColumn();
+
+    $stmtProg = $db->prepare('
+        SELECT COUNT(*) AS concluidas 
+        FROM progresso_aula 
+        WHERE matricula_id = ? AND concluida = 1
+    ');
+    $stmtProg->execute([$matriculaId]);
+    $concluidas = (int)$stmtProg->fetchColumn();
+
+    $percentual = $totalAulas > 0 ? (int)round(($concluidas / $totalAulas) * 100) : 100;
+    if ($percentual > 100) $percentual = 100;
+
+    $concluido = ($percentual >= 100) ? 1 : 0;
+    $dataConclusaoMat = $concluido ? date('Y-m-d H:i:s') : null;
+
+    $stmtUpdateMat = $db->prepare('
+        UPDATE matriculas
+        SET progresso_total = ?, concluido = ?, data_conclusao = COALESCE(data_conclusao, ?)
+        WHERE id = ?
+    ');
+    $stmtUpdateMat->execute([$percentual, $concluido, $dataConclusaoMat, $matriculaId]);
     
     jsonOk([
         'skipped' => true,
@@ -58,7 +93,7 @@ if ($bypassAvançar) {
 }
 
 // Caso normal: processando respostas
-if (empty($respostas)) {
+if (empty($respostas) && empty($body['tempo_esgotado'])) {
     jsonError('Respostas do quizz são obrigatórias.', 400);
 }
 
@@ -133,6 +168,23 @@ if ($respostaSalva) {
     $stmt->execute([$matriculaId, $aulaId, $nota, $aprovado ? 1 : 0, $acertos, $total, $tentativasRestantes]);
 }
 
+// Se for prova/exame oficial, registra na tabela avaliacao_tentativas
+$stmtAula = $db->prepare('SELECT e_prova FROM aulas WHERE id = ? LIMIT 1');
+$stmtAula->execute([$aulaId]);
+$eProva = (int)$stmtAula->fetchColumn();
+
+if ($eProva === 1) {
+    $resultado = $aprovado ? 'aprovado' : 'reprovado';
+    $erros = $total - $acertos;
+    $respostasJson = json_encode($detalhesCorrecao, JSON_UNESCAPED_UNICODE);
+    
+    $stmtLog = $db->prepare('
+        INSERT INTO avaliacao_tentativas (matricula_id, aula_id, total_questoes, acertos, erros, nao_respondidas, nota, resultado, respostas_json)
+        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)
+    ');
+    $stmtLog->execute([$matriculaId, $aulaId, $total, $acertos, $erros, $nota, $resultado, $respostasJson]);
+}
+
 // 5. Se aprovado, marca aula como concluída no progresso
 if ($aprovado) {
     $stmt = $db->prepare('
@@ -141,6 +193,41 @@ if ($aprovado) {
         ON DUPLICATE KEY UPDATE concluida = 1, data_conclusao = COALESCE(data_conclusao, NOW()), updated_at = NOW()
     ');
     $stmt->execute([$matriculaId, $aulaId]);
+
+    // Recalcula progresso geral do curso e atualiza a matrícula
+    $stmtMat = $db->prepare('SELECT curso_id FROM matriculas WHERE id = ? LIMIT 1');
+    $stmtMat->execute([$matriculaId]);
+    $cursoId = (int)$stmtMat->fetchColumn();
+
+    $stmtAulas = $db->prepare('
+        SELECT COUNT(*) AS total 
+        FROM aulas a
+        JOIN modulos m ON a.modulo_id = m.id
+        WHERE m.curso_id = ?
+    ');
+    $stmtAulas->execute([$cursoId]);
+    $totalAulas = (int)$stmtAulas->fetchColumn();
+
+    $stmtProg = $db->prepare('
+        SELECT COUNT(*) AS concluidas 
+        FROM progresso_aula 
+        WHERE matricula_id = ? AND concluida = 1
+    ');
+    $stmtProg->execute([$matriculaId]);
+    $concluidas = (int)$stmtProg->fetchColumn();
+
+    $percentual = $totalAulas > 0 ? (int)round(($concluidas / $totalAulas) * 100) : 100;
+    if ($percentual > 100) $percentual = 100;
+
+    $concluido = ($percentual >= 100) ? 1 : 0;
+    $dataConclusaoMat = $concluido ? date('Y-m-d H:i:s') : null;
+
+    $stmtUpdateMat = $db->prepare('
+        UPDATE matriculas
+        SET progresso_total = ?, concluido = ?, data_conclusao = COALESCE(data_conclusao, ?)
+        WHERE id = ?
+    ');
+    $stmtUpdateMat->execute([$percentual, $concluido, $dataConclusaoMat, $matriculaId]);
 }
 
 jsonOk([

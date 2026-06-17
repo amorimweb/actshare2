@@ -5,6 +5,20 @@
 
 body { font-family: 'Inter', sans-serif; }
 
+.app-main-shell {
+  padding-top: 7.5rem; /* header 64px + course strip ~56px */
+}
+
+.app-main-shell-simple {
+  padding-top: 4rem;
+}
+
+@media (min-width: 768px) {
+  .app-main-shell {
+    padding-top: 8.5rem;
+  }
+}
+
 /* Animação de entrada suave */
 .transition-custom {
   transition: all 0.2s ease;
@@ -13,7 +27,7 @@ body { font-family: 'Inter', sans-serif; }
 /* Efeito hover em cards */
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,127,0.12);
+  box-shadow: 0 8px 25px rgba(12,19,35,0.12);
 }
 
 /* Header ao rolar */
@@ -25,7 +39,7 @@ body { font-family: 'Inter', sans-serif; }
 
 /* Gradiente hero */
 .hero-gradient {
-  background: linear-gradient(135deg, #00007F 0%, #0000B3 50%, #1a1aff 100%);
+  background: linear-gradient(135deg, #0C1323 0%, #1a2540 50%, #2a3a5c 100%);
 }
 
 /* Progress bar animation */
@@ -47,6 +61,11 @@ body { font-family: 'Inter', sans-serif; }
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Navs de desktop nunca aparecem em mobile, independente do JS */
+@media (max-width: 767px) {
+  #nav-public, #nav-aluno { display: none !important; }
 }
 
 /* Print styles para certificado */

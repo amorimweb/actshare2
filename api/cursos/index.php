@@ -12,7 +12,14 @@ if ($method === 'GET') {
 
     if (($_GET['ativo'] ?? '') === 'true')   { $conditions[] = 'c.ativo = 1'; }
     if (($_GET['publico'] ?? '') === 'true')  { $conditions[] = 'c.publico = 1'; }
-    if (!empty($_GET['categoria']))           { $conditions[] = 'c.categoria_id = ?'; $params[] = $_GET['categoria']; }
+    if (!empty($_GET['categoria'])) {
+        if (ctype_digit((string) $_GET['categoria'])) {
+            $conditions[] = 'c.categoria_id = ?';
+        } else {
+            $conditions[] = 'cat.slug = ?';
+        }
+        $params[] = $_GET['categoria'];
+    }
 
     $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
     $stmt  = $db->prepare("
@@ -41,19 +48,27 @@ if ($method === 'POST') {
 
     $db   = getDB();
     $stmt = $db->prepare('
-        INSERT INTO cursos (titulo, descricao, thumb_url, ativo, publico, categoria_id, instrutor_id, preco, carga_horaria_horas)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO cursos (titulo, nome_certificado, codigo, descricao, thumb_url, ativo, publico, categoria_id, instrutor_id, preco, carga_horaria_horas, prazo_acesso_dias, disponivel_loja, certificado_template_url, certificado_config, certificado_liberacao, exibir_instrutor)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ');
     $stmt->execute([
-        $body['titulo']            ?? '',
-        $body['descricao']         ?? null,
-        $body['thumb_url']         ?? null,
-        $body['ativo']             ?? 1,
-        $body['publico']           ?? 0,
-        $body['categoria_id']      ?? null,
-        $body['instrutor_id']      ?? null,
-        $body['preco']             ?? 0,
-        $body['carga_horaria_horas'] ?? 0,
+        $body['titulo']                  ?? '',
+        $body['nome_certificado']        ?? null,
+        $body['codigo']                  ?? null,
+        $body['descricao']               ?? null,
+        $body['thumb_url']               ?? null,
+        $body['ativo']                   ?? 1,
+        $body['publico']                 ?? 0,
+        $body['categoria_id']            ?? null,
+        $body['instrutor_id']            ?? null,
+        $body['preco']                   ?? 0,
+        $body['carga_horaria_horas']     ?? 0,
+        $body['prazo_acesso_dias']       ?? null,
+        $body['disponivel_loja']         ?? 1,
+        $body['certificado_template_url']?? null,
+        $body['certificado_config']      ?? null,
+        $body['certificado_liberacao']   ?? 'ambos',
+        $body['exibir_instrutor']        ?? 0,
     ]);
 
     $id   = $db->lastInsertId();

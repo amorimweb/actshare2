@@ -1,0 +1,30 @@
+# Ambiente
+.env
+.env.local
+
+# Dependências PHP (caso venha a usar Composer)
+vendor/
+
+# Cache e logs
+*.log
+logs/
+tmp/
+api_response.txt
+
+# Artefatos locais
+*.zip
+*.docx
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude
+.claude/
+.agents/

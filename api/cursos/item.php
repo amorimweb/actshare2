@@ -49,7 +49,13 @@ if ($method === 'GET') {
 if ($method === 'PUT') {
     requireAdmin();
     $body   = json_decode(file_get_contents('php://input'), true) ?? [];
-    $fields = ['titulo','descricao','thumb_url','ativo','publico','categoria_id','instrutor_id','preco','carga_horaria_horas','prazo_conclusao_dias'];
+    $fields = [
+        'titulo', 'nome_certificado', 'codigo', 'descricao', 'thumb_url', 
+        'ativo', 'publico', 'categoria_id', 'instrutor_id', 'preco', 
+        'carga_horaria_horas', 'prazo_acesso_dias', 'disponivel_loja', 
+        'certificado_template_url', 'certificado_config', 'certificado_liberacao', 
+        'exibir_instrutor'
+    ];
 
     $set    = [];
     $params = [];

@@ -56,10 +56,12 @@ async function carregarCursosDestaque(containerId, limite = 4) {
 let _categoriaAtiva = null;
 
 async function carregarPaginaCursos() {
+  const categoriaInicial = new URLSearchParams(window.location.search).get('categoria');
   await Promise.all([
     carregarSidebarCategorias(),
-    renderizarCursos(null),
+    renderizarCursos(categoriaInicial),
   ]);
+  atualizarCategoriaAtiva(categoriaInicial);
 }
 
 async function carregarSidebarCategorias() {
@@ -69,11 +71,13 @@ async function carregarSidebarCategorias() {
   try {
     const cats = await fetchCategorias();
     cats.forEach(cat => {
+      const catKey = String(cat.slug || cat.id);
+      const isActive = catKey === String(_categoriaAtiva ?? '');
       const li = document.createElement('li');
       li.innerHTML = `
-        <button onclick="filtrarCategoria(${cat.id})"
-          class="categoria-btn w-full text-left text-sm px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-          data-id="${cat.id}">
+        <button onclick="filtrarCategoria('${esc(catKey)}')"
+          class="categoria-btn w-full text-left text-sm px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors ${isActive ? 'bg-blue-50 text-primary font-medium' : 'text-gray-600'}"
+          data-id="${esc(catKey)}">
           ${esc(cat.nome)}
         </button>
       `;
@@ -96,16 +100,41 @@ async function renderizarCursos(categoriaId) {
     _cursos = null;
     const cursos = await fetchCursos(params);
 
-    if (!cursos.length) {
+    const searchInput = document.getElementById('course-search-input');
+    const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : new URLSearchParams(window.location.search).get('busca')?.toLowerCase() || '';
+
+    if (searchVal && searchInput && !searchInput.value) {
+      searchInput.value = searchVal;
+    }
+
+    let filtered = cursos;
+    if (searchVal) {
+      filtered = cursos.filter(c => 
+        c.titulo.toLowerCase().includes(searchVal) || 
+        (c.descricao && c.descricao.toLowerCase().includes(searchVal)) ||
+        (c.codigo && c.codigo.toLowerCase().includes(searchVal))
+      );
+    }
+
+    if (!filtered.length) {
       grid.innerHTML = '';
       empty?.classList.remove('hidden');
       return;
     }
     empty?.classList.add('hidden');
-    grid.innerHTML = cursos.map(renderCardCurso).join('');
+    grid.innerHTML = filtered.map(renderCardCurso).join('');
   } catch {
     grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Erro ao carregar.</p>';
   }
+}
+
+function atualizarCategoriaAtiva(categoriaId) {
+  document.querySelectorAll('.categoria-btn').forEach(b => {
+    b.classList.toggle('bg-blue-50', b.dataset.id == (categoriaId ?? ''));
+    b.classList.toggle('text-primary', b.dataset.id == (categoriaId ?? ''));
+    b.classList.toggle('font-medium', b.dataset.id == (categoriaId ?? ''));
+    b.classList.toggle('text-gray-600', b.dataset.id != (categoriaId ?? ''));
+  });
 }
 
 function esc(str) {
