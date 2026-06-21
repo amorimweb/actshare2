@@ -72,6 +72,20 @@ require __DIR__ . '/layout/header.php';
           <p class="text-xs text-gray-400">As vagas foram liberadas no seu perfil e os acessos já estão ativos.</p>
         </div>
       </div>
+
+      <!-- Ações do Pedido -->
+      <div class="border-t border-gray-100 pt-6 flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="<?= BASE_PATH ?>/cursos"
+          class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-700 font-semibold px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-all text-sm shadow-sm gap-2">
+          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          Continuar Comprando
+        </a>
+        <a href="<?= BASE_PATH ?>/painel"
+          class="inline-flex items-center justify-center bg-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm gap-2">
+          Ir para Área do Aluno
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
     </div>
 
     <!-- Painel de Simulação (Apenas em Testes) -->

@@ -12,15 +12,14 @@ if (!$cursoId) {
 $db = getDB();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // 1. Busca a organização do gestor
-    $stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-    $stmt->execute([$gestor['id']]);
-    $org = $stmt->fetch();
+    $context = getGestorContext($gestor, $db);
+    $mainGestorId = $context['id'];
+    $orgId = $context['org_id'];
     
     $participantes = [];
     
     // 2. Se a organização existe, busca os membros matriculados no curso
-    if ($org) {
+    if ($orgId) {
         $stmt = $db->prepare('
             SELECT u.id, u.nome, u.email, u.role, 
                    m.id AS matricula_id, m.progresso_total, m.concluido, m.data_inicio, m.data_fim_acesso
@@ -30,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             WHERE mo.organizacao_id = ? AND m.curso_id = ?
             ORDER BY u.nome
         ');
-        $stmt->execute([$org['id'], $cursoId]);
+        $stmt->execute([$orgId, $cursoId]);
         $participantes = $stmt->fetchAll();
     }
     
@@ -41,31 +40,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         WHERE m.aluno_id = ? AND m.curso_id = ? AND m.vagas_totais > 0
         LIMIT 1
     ');
-    $stmt->execute([$gestor['id'], $cursoId]);
+    $stmt->execute([$mainGestorId, $cursoId]);
     $contract = $stmt->fetch();
     
     if ($contract && $contract['participante'] == 1) {
+        $stmtOwner = $db->prepare('SELECT nome, email, role FROM usuarios WHERE id = ? LIMIT 1');
+        $stmtOwner->execute([$mainGestorId]);
+        $ownerUser = $stmtOwner->fetch();
+        $isSelf = ((int)$gestor['id'] === (int)$mainGestorId);
+
         // Insere o gestor no topo ou final da lista
         array_unshift($participantes, [
-            'id'               => $gestor['id'],
-            'nome'             => $gestor['nome'] . ' (Você/Gestor)',
-            'email'            => $gestor['email'],
-            'role'             => $gestor['role'],
+            'id'               => $mainGestorId,
+            'nome'             => $ownerUser['nome'] . ($isSelf ? ' (Você/Gestor)' : ' (Gestor)'),
+            'email'            => $ownerUser['email'],
+            'role'             => $ownerUser['role'],
             'matricula_id'     => $contract['matricula_id'],
             'progresso_total'  => $contract['progresso_total'],
             'concluido'        => $contract['concluido'],
             'data_inicio'      => $contract['data_inicio'],
             'data_fim_acesso'  => $contract['data_fim_acesso'],
-            'is_gestor_self'   => true
+            'is_gestor_self'   => $isSelf
         ]);
     }
     
     jsonOk($participantes);
 
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $context = getGestorContext($gestor, $db);
+    $mainGestorId = $context['id'];
+
     // 1. Busca contrato B2B do gestor
     $stmt = $db->prepare('SELECT id, vagas_totais, vagas_usadas, created_at, com_prova FROM matriculas WHERE aluno_id = ? AND curso_id = ? AND vagas_totais > 0 LIMIT 1');
-    $stmt->execute([$gestor['id'], $cursoId]);
+    $stmt->execute([$mainGestorId, $cursoId]);
     $contract = $stmt->fetch();
     
     if (!$contract) {
@@ -114,16 +121,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
         
         // 5. Obtém ou cria organização do gestor
-        $stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-        $stmt->execute([$gestor['id']]);
-        $org = $stmt->fetch();
+        $orgId = $context['org_id'];
         
-        if (!$org) {
+        if (!$orgId) {
             $stmt = $db->prepare('INSERT INTO organizacoes (gestor_id, ativo) VALUES (?, 1)');
-            $stmt->execute([$gestor['id']]);
+            $stmt->execute([$mainGestorId]);
             $orgId = (int)$db->lastInsertId();
-        } else {
-            $orgId = (int)$org['id'];
         }
         
         // 6. Vincula aluno à organização se necessário
@@ -187,8 +190,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     
     // 3. Busca contrato B2B do gestor
+    $context = getGestorContext($gestor, $db);
+    $mainGestorId = $context['id'];
     $stmt = $db->prepare('SELECT id, vagas_usadas FROM matriculas WHERE aluno_id = ? AND curso_id = ? AND vagas_totais > 0 LIMIT 1');
-    $stmt->execute([$gestor['id'], $cursoId]);
+    $stmt->execute([$mainGestorId, $cursoId]);
     $contract = $stmt->fetch();
     
     if (!$contract) {

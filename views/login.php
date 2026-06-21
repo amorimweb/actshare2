@@ -78,7 +78,17 @@
         password: document.getElementById('login-password').value,
       });
       authSetUser(res.user);
-      const redirect = new URLSearchParams(location.search).get('redirect') || BASE + '/painel';
+      
+      let redirect = new URLSearchParams(location.search).get('redirect');
+      if (!redirect) {
+        if (res.user.role === 'gestor') {
+          redirect = BASE + '/gestor';
+        } else if (res.user.role === 'admin') {
+          redirect = BASE + '/admin';
+        } else {
+          redirect = BASE + '/painel';
+        }
+      }
       window.location.href = redirect;
     } catch (ex) {
       err.textContent = ex.message || 'Erro ao fazer login.';
@@ -90,7 +100,16 @@
 
   // Redireciona se já logado
   document.addEventListener('DOMContentLoaded', () => {
-    if (authGetUser()) window.location.href = BASE + '/painel';
+    const user = authGetUser();
+    if (user) {
+      if (user.role === 'gestor') {
+        window.location.href = BASE + '/gestor';
+      } else if (user.role === 'admin') {
+        window.location.href = BASE + '/admin';
+      } else {
+        window.location.href = BASE + '/painel';
+      }
+    }
   });
 
   function togglePasswordVisibility() {

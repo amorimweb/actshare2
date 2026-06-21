@@ -82,7 +82,7 @@ if ($showCourseNav) try {
           <a href="<?= BASE_PATH ?>/painel" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">ÁREA DO ALUNO</a>
           <a href="<?= BASE_PATH ?>/certificado" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">CERTIFICADO</a>
           <a href="https://wa.me/5511999999999" target="_blank" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors flex items-center gap-1">
-            FALE CONOSCO
+            CONTATO
           </a>
         </nav>
       </div>

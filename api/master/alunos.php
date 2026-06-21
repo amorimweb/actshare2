@@ -6,12 +6,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') methodNotAllowed();
 
 $user = requireMasterOrAdmin();
 $db   = getDB();
+$context = getGestorContext($user, $db);
+$mainGestorId = $context['id'];
+$orgId = $context['org_id'];
 
-// Busca organização do gestor
-$stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-$stmt->execute([$user['id']]);
-$org = $stmt->fetch();
-if (!$org) jsonOk([]);
+if (!$orgId) jsonOk([]);
+$org = ['id' => $orgId];
 
 // Busca membros da organização
 $stmt = $db->prepare('

@@ -1,5 +1,5 @@
 # Ambiente
-.env
+#.env
 .env.local
 
 # Dependências PHP (caso venha a usar Composer)

@@ -12,6 +12,8 @@ if (!$cursoId) {
 }
 
 $db = getDB();
+$context = getGestorContext($gestor, $db);
+$mainGestorId = $context['id'];
 
 // Busca a matrícula do gestor para este curso
 $stmt = $db->prepare('
@@ -22,7 +24,7 @@ $stmt = $db->prepare('
     WHERE m.aluno_id = ? AND m.curso_id = ? AND m.vagas_totais IS NOT NULL AND m.vagas_totais > 0
     LIMIT 1
 ');
-$stmt->execute([$gestor['id'], $cursoId]);
+$stmt->execute([$mainGestorId, $cursoId]);
 $compra = $stmt->fetch();
 
 if (!$compra) {

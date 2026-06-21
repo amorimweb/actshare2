@@ -12,15 +12,14 @@ if (!$cursoId) {
 }
 
 $db = getDB();
+$context = getGestorContext($gestor, $db);
+$mainGestorId = $context['id'];
+$orgId = $context['org_id'];
 
-// 1. Busca a organização do gestor
-$stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-$stmt->execute([$gestor['id']]);
-$org = $stmt->fetch();
-
-if (!$org) {
+if (!$orgId) {
     jsonError('Organização não encontrada.', 404);
 }
+$org = ['id' => $orgId];
 
 // 2. Busca o contrato B2B (matrícula do gestor)
 $stmt = $db->prepare('
@@ -31,7 +30,7 @@ $stmt = $db->prepare('
     WHERE m.aluno_id = ? AND m.curso_id = ? AND m.vagas_totais > 0
     LIMIT 1
 ');
-$stmt->execute([$gestor['id'], $cursoId]);
+$stmt->execute([$mainGestorId, $cursoId]);
 $contract = $stmt->fetch();
 
 if (!$contract) {
@@ -58,12 +57,12 @@ $stmt = $db->prepare('
     WHERE m.aluno_id = ? AND m.curso_id = ? AND m.vagas_totais > 0 AND m.participante = 1
     LIMIT 1
 ');
-$stmt->execute([$gestor['id'], $cursoId]);
+$stmt->execute([$mainGestorId, $cursoId]);
 $selfContract = $stmt->fetch();
 
 if ($selfContract) {
     array_unshift($participantes, [
-        'aluno_id'        => $gestor['id'],
+        'aluno_id'        => $mainGestorId,
         'nome'            => $gestor['nome'] . ' (Você/Gestor)',
         'email'           => $gestor['email'],
         'matricula_id'    => $selfContract['matricula_id'],

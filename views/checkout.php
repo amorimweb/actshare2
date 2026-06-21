@@ -163,11 +163,19 @@ require __DIR__ . '/layout/header.php';
           <span id="resumo-total" class="text-2xl font-extrabold text-primary">R$ 0,00</span>
         </div>
 
-        <button onclick="finalizarCompra()" id="btn-finalizar"
-          class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
-          Finalizar Compra
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-        </button>
+        <div class="space-y-3">
+          <button onclick="finalizarCompra()" id="btn-finalizar"
+            class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
+            Finalizar Compra
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          </button>
+
+          <a href="<?= BASE_PATH ?>/cursos"
+            class="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-all text-sm shadow-sm flex items-center justify-center gap-2">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Continuar Comprando
+          </a>
+        </div>
       </div>
     </div>
   </div>

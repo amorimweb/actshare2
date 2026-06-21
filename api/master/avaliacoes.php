@@ -14,18 +14,17 @@ if (!$alunoId || !$cursoId) {
 }
 
 $db = getDB();
+$context = getGestorContext($gestor, $db);
+$mainGestorId = $context['id'];
+$orgId = $context['org_id'];
 
-// 1. Verifica a organização do gestor
-$stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-$stmt->execute([$gestor['id']]);
-$org = $stmt->fetch();
-
-if (!$org) {
+if (!$orgId) {
     jsonError('Organização não encontrada.', 404);
 }
+$org = ['id' => $orgId];
 
-// 2. Garante que o aluno pertence à organização do gestor (ou se é o próprio gestor)
-if ($alunoId !== (int)$gestor['id']) {
+// 2. Garante que o aluno pertence à organização do gestor (ou se é o próprio gestor/sub-gestor)
+if ($alunoId !== (int)$gestor['id'] && $alunoId !== $mainGestorId) {
     $stmt = $db->prepare('SELECT id FROM membros_organizacao WHERE organizacao_id = ? AND usuario_id = ? LIMIT 1');
     $stmt->execute([$org['id'], $alunoId]);
     if (!$stmt->fetch()) {

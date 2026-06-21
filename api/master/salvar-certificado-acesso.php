@@ -14,17 +14,16 @@ if (!in_array($acesso, ['empresa', 'aluno', 'ambos'])) {
     jsonError('Acesso inválido. Deve ser: empresa, aluno ou ambos.', 400);
 }
 
-// Obtém ou cria a organização do gestor
-$stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-$stmt->execute([$gestor['id']]);
-$org = $stmt->fetch();
+$context = getGestorContext($gestor, $db);
+$mainGestorId = $context['id'];
+$orgId = $context['org_id'];
 
-if (!$org) {
+if (!$orgId) {
     $stmt = $db->prepare('INSERT INTO organizacoes (gestor_id, ativo, certificado_acesso) VALUES (?, 1, ?)');
-    $stmt->execute([$gestor['id'], $acesso]);
+    $stmt->execute([$mainGestorId, $acesso]);
 } else {
     $stmt = $db->prepare('UPDATE organizacoes SET certificado_acesso = ? WHERE id = ?');
-    $stmt->execute([$acesso, $org['id']]);
+    $stmt->execute([$acesso, $orgId]);
 }
 
 jsonOk(['success' => true, 'message' => 'Preferência de certificado salva com sucesso.']);

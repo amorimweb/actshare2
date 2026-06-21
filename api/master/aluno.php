@@ -36,17 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$nome, $email, $hash, $role]);
         $novoId = (int)$db->lastInsertId();
 
-        // Obtém ou cria organização do gestor
-        $stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-        $stmt->execute([$gestor['id']]);
-        $org = $stmt->fetch();
+        $context = getGestorContext($gestor, $db);
+        $mainGestorId = $context['id'];
+        $orgId = $context['org_id'];
 
-        if (!$org) {
+        if (!$orgId) {
             $stmt = $db->prepare('INSERT INTO organizacoes (gestor_id, ativo) VALUES (?, 1)');
-            $stmt->execute([$gestor['id']]);
+            $stmt->execute([$mainGestorId]);
             $orgId = (int)$db->lastInsertId();
-        } else {
-            $orgId = $org['id'];
         }
 
         $stmt = $db->prepare('INSERT INTO membros_organizacao (organizacao_id, usuario_id) VALUES (?, ?)');
@@ -60,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 FROM matriculas m
                 WHERE m.aluno_id = ? AND m.vagas_totais > 0 AND m.vagas_usadas < m.vagas_totais
             ');
-            $stmt->execute([$gestor['id']]);
+            $stmt->execute([$mainGestorId]);
             $contratos = $stmt->fetchAll();
 
             foreach ($contratos as $contract) {
@@ -108,13 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
         jsonError('Operação não permitida.', 400);
     }
     
-    // Busca organização do gestor
-    $stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
-    $stmt->execute([$gestor['id']]);
-    $org = $stmt->fetch();
-    if (!$org) {
+    $context = getGestorContext($gestor, $db);
+    $orgId = $context['org_id'];
+    if (!$orgId) {
         jsonError('Organização não encontrada.', 404);
     }
+    $org = ['id' => $orgId];
     
     $db->beginTransaction();
     try {

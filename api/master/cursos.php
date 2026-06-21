@@ -6,6 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') methodNotAllowed();
 
 $gestor = requireMasterOrAdmin();
 $db = getDB();
+$context = getGestorContext($gestor, $db);
+$mainGestorId = $context['id'];
 
 // Retorna todas as matrículas B2B compradas pelo gestor (onde vagas_totais > 0)
 // E junta com cursos para pegar título, thumb_url, etc.
@@ -17,7 +19,7 @@ $stmt = $db->prepare('
     WHERE m.aluno_id = ? AND m.vagas_totais IS NOT NULL AND m.vagas_totais > 0
     ORDER BY m.created_at DESC
 ');
-$stmt->execute([$gestor['id']]);
+$stmt->execute([$mainGestorId]);
 $cursos = $stmt->fetchAll();
 
 jsonOk($cursos);

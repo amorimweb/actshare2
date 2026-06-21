@@ -46,3 +46,49 @@ function clearAuthCookie(): void {
         'samesite' => 'Lax',
     ]);
 }
+
+function getGestorContext(array $user, PDO $db): array {
+    $userId = $user['id'];
+    
+    // 1. Check if they are the main gestor (owner of an organization)
+    $stmt = $db->prepare('SELECT id, gestor_id, certificado_acesso FROM organizacoes WHERE gestor_id = ? AND ativo = 1 LIMIT 1');
+    $stmt->execute([$userId]);
+    $org = $stmt->fetch();
+    
+    if ($org) {
+        return [
+            'id' => $userId,
+            'org_id' => $org['id'],
+            'certificado_acesso' => $org['certificado_acesso'],
+            'is_subgestor' => false
+        ];
+    }
+    
+    // 2. Check if they are a sub-gestor (member of an active organization)
+    $stmt = $db->prepare('
+        SELECT o.id, o.gestor_id, o.certificado_acesso 
+        FROM membros_organizacao mo
+        JOIN organizacoes o ON mo.organizacao_id = o.id
+        WHERE mo.usuario_id = ? AND o.ativo = 1
+        LIMIT 1
+    ');
+    $stmt->execute([$userId]);
+    $org = $stmt->fetch();
+    
+    if ($org) {
+        return [
+            'id' => (int)$org['gestor_id'],
+            'org_id' => (int)$org['id'],
+            'certificado_acesso' => $org['certificado_acesso'],
+            'is_subgestor' => true
+        ];
+    }
+    
+    // Fallback if not linked to any active organization
+    return [
+        'id' => $userId,
+        'org_id' => null,
+        'certificado_acesso' => null,
+        'is_subgestor' => false
+    ];
+}

@@ -18,9 +18,9 @@ require __DIR__ . '/layout/header.php';
       <div id="carrinho-vazio" class="hidden bg-gray-50 border border-gray-100 rounded-2xl p-12 text-center">
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
         <h3 class="text-gray-700 font-bold text-lg mb-2">Seu carrinho está vazio</h3>
-        <p class="text-xs text-gray-400 mb-6">Navegue pelo catálogo para adicionar excelentes cursos.</p>
+        <p class="text-xs text-gray-400 mb-6">Navegue pelo catálogo para adicionar excelentes treinamentos.</p>
         <a href="<?= BASE_PATH ?>/cursos" class="inline-block bg-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm">
-          Ver Catálogo de Cursos
+          Ver Catálogo de Treinamentos
         </a>
       </div>
     </div>
@@ -67,11 +67,19 @@ require __DIR__ . '/layout/header.php';
           <span id="resumo-total" class="text-2xl font-extrabold text-primary">R$ 0,00</span>
         </div>
 
-        <button onclick="irParaCheckout()" id="btn-checkout"
-          class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
-          Ir para o Pagamento
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-        </button>
+        <div class="space-y-3">
+          <button onclick="irParaCheckout()" id="btn-checkout"
+            class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
+            Ir para o Pagamento
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+
+          <a href="<?= BASE_PATH ?>/cursos"
+            class="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-all text-sm shadow-sm flex items-center justify-center gap-2">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Continuar Comprando
+          </a>
+        </div>
       </div>
     </div>
   </div>
