@@ -100,3 +100,38 @@ CREATE TABLE IF NOT EXISTS combo_itens (
 
 ALTER TABLE itens_pedido ADD COLUMN IF NOT EXISTS combo_id INT UNSIGNED DEFAULT NULL AFTER curso_id;
 ALTER TABLE itens_pedido MODIFY COLUMN curso_id INT UNSIGNED DEFAULT NULL;
+
+SET @fk_exists = (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'itens_pedido' AND CONSTRAINT_NAME = 'fk_item_combo'
+);
+SET @sql = IF(@fk_exists = 0,
+  'ALTER TABLE itens_pedido ADD CONSTRAINT fk_item_combo FOREIGN KEY (combo_id) REFERENCES combos(id) ON DELETE CASCADE',
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Valores padrão das regras de desconto (a tela Admin > Cupons > "Regras de
+-- Desconto" já funciona sem isso, pois includes/configuracoes.php tem
+-- fallback em PHP — isso só faz a tabela já nascer com os valores visíveis).
+INSERT INTO configuracoes (chave, valor) VALUES
+  ('cupom_indicacao_percentual', '10'),
+  ('cupom_indicacao_validade_dias', '30'),
+  ('desconto_fidelidade_percentual', '10'),
+  ('desconto_progressivo_faixa1_min', '2'),
+  ('desconto_progressivo_faixa1_max', '5'),
+  ('desconto_progressivo_faixa1_percentual', '5'),
+  ('desconto_progressivo_faixa2_min', '6'),
+  ('desconto_progressivo_faixa2_max', '10'),
+  ('desconto_progressivo_faixa2_percentual', '10'),
+  ('desconto_progressivo_faixa3_min', '11'),
+  ('desconto_progressivo_faixa3_percentual', '15')
+ON DUPLICATE KEY UPDATE valor = valor;
+
+-- Todo curso precisa de um "codigo" (o certificado usa [CODIGO]-[ID] como
+-- código de autenticidade da validação pública — sem ele a validação nunca
+-- encontra o certificado). Cursos cadastrados antes desta correção ficaram
+-- com codigo NULL; preenche com um valor único e estável baseado no id.
+-- Cursos novos já ganham um código automático em api/cursos/index.php.
+UPDATE cursos SET codigo = CONCAT('C', LPAD(id, 6, '0')) WHERE codigo IS NULL OR codigo = '';
