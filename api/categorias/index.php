@@ -14,9 +14,11 @@ if ($method === 'POST') {
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
     if (empty($body['nome'])) jsonError('Nome é obrigatório.', 400);
 
+    $parentId = isset($body['parent_id']) && $body['parent_id'] !== '' ? (int)$body['parent_id'] : null;
+
     $db   = getDB();
-    $stmt = $db->prepare('INSERT INTO categorias (nome, slug) VALUES (?, ?)');
-    $stmt->execute([$body['nome'], $body['slug'] ?? null]);
+    $stmt = $db->prepare('INSERT INTO categorias (nome, slug, parent_id) VALUES (?, ?, ?)');
+    $stmt->execute([$body['nome'], $body['slug'] ?? null, $parentId]);
 
     $id   = $db->lastInsertId();
     $stmt = $db->prepare('SELECT * FROM categorias WHERE id = ?');

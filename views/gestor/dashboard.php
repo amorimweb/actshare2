@@ -1193,12 +1193,13 @@ require __DIR__ . '/../layout/header.php';
             ${correctBadge}
           </div>
           <div class="text-[11px] space-y-1 text-slate-650">
-            <div><span class="font-semibold text-slate-500">Opção Marcada:</span> ${resp.opcao_escolhida_id ? 'Marcada' : 'Sem resposta/Tempo esgotado'}</div>
-            <div class="text-emerald-700"><span class="font-semibold text-slate-500">Opção Correta:</span> ${resp.texto_correta}</div>
+            <div><span class="font-semibold text-slate-500">Respostas Marcadas:</span> ${(resp.opcoes_escolhidas && resp.opcoes_escolhidas.length) ? resp.opcoes_escolhidas.length + ' alternativa(s)' : 'Sem resposta/Tempo esgotado'}</div>
+            <div class="text-emerald-700"><span class="font-semibold text-slate-500">Alternativa(s) Correta(s):</span> ${(resp.textos_corretos || []).join('; ') || resp.texto_correta || '—'}</div>
           </div>
+          ${resp.justificativa ? `
           <div class="text-[10px] text-slate-400 bg-slate-50 p-2 rounded-lg italic">
             <strong>Justificativa:</strong> ${resp.justificativa}
-          </div>
+          </div>` : ''}
         </div>
       `;
     }).join('');

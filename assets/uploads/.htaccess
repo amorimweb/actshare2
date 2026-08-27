@@ -1,0 +1,7 @@
+# Uploads são dados, não código: nunca executar PHP aqui.
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<FilesMatch "\.(php|phtml|php\d)$">
+  Require all denied
+</FilesMatch>

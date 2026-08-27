@@ -27,6 +27,8 @@
         </div>
         <!-- Código de Autenticidade -->
         <div id="field-codigo" class="absolute font-mono text-[10px]" style="font-family: monospace;"></div>
+        <!-- QR Code de validação -->
+        <img id="field-qrcode" class="absolute" alt="QR Code de validação">
       </div>
     </div>
     
@@ -87,7 +89,8 @@
     curso: { x: 561, y: 420, font_size: 26, color: '#10B981', center: true },
     data: { x: 561, y: 500, font_size: 13, color: '#6B7280', center: true },
     instrutor: { x: 320, y: 620, font_size: 15, color: '#1F2937', center: true },
-    codigo: { x: 800, y: 620, font_size: 11, color: '#9CA3AF', center: true }
+    codigo: { x: 800, y: 620, font_size: 11, color: '#9CA3AF', center: true },
+    qrcode: { x: 1030, y: 690, size: 70 }
   };
 
   async function carregarCertificado() {
@@ -159,6 +162,17 @@
       const codCurso = (data.curso.codigo || 'CUR').toUpperCase();
       const codAutenticidade = `${codCurso}-${data.matricula.id}`;
       aplicarEstiloCampo('field-codigo', config.codigo, `Código de Autenticidade: ${codAutenticidade}`);
+
+      // QR Code apontando para a validação pública do certificado
+      const qrConfig = config.qrcode || defaultConfig.qrcode;
+      const urlValidacao = window.location.origin + BASE + '/validar-certificado?codigo=' + encodeURIComponent(codAutenticidade);
+      const qrImg = document.getElementById('field-qrcode');
+      const qrSize = qrConfig.size || 70;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize * 2}x${qrSize * 2}&data=` + encodeURIComponent(urlValidacao);
+      qrImg.style.left = qrConfig.x + 'px';
+      qrImg.style.top = qrConfig.y + 'px';
+      qrImg.style.width = qrSize + 'px';
+      qrImg.style.height = qrSize + 'px';
 
       document.getElementById('cert-loading').classList.add('hidden');
       document.getElementById('cert-content').classList.remove('hidden');

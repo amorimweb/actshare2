@@ -56,6 +56,7 @@ if ($method === 'POST') {
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
     $texto         = trim($body['texto'] ?? '');
+    $imagemUrl     = trim($body['imagem_url'] ?? '') ?: null;
     $justificativa = trim($body['justificativa'] ?? '');
     $cursoId       = isset($body['curso_id']) && $body['curso_id'] !== '' ? (int)$body['curso_id'] : null;
     $moduloId      = isset($body['modulo_id']) && $body['modulo_id'] !== '' ? (int)$body['modulo_id'] : null;
@@ -65,21 +66,27 @@ if ($method === 'POST') {
     if (empty($texto)) {
         jsonError('O texto da pergunta é obrigatório.', 400);
     }
+    if (empty($justificativa)) {
+        jsonError('A justificativa pedagógica é obrigatória.', 400);
+    }
     if (empty($aulaId)) {
         jsonError('A vinculação a uma aula/exame é obrigatória.', 400);
     }
     if (count($opcoes) < 2) {
         jsonError('A pergunta deve conter pelo menos duas alternativas.', 400);
     }
+    if (count($opcoes) > 5) {
+        jsonError('A pergunta pode ter no máximo 5 alternativas.', 400);
+    }
 
     $db->beginTransaction();
     try {
         // Insere a pergunta
         $stmt = $db->prepare('
-            INSERT INTO perguntas (aula_id, curso_id, modulo_id, texto, justificativa)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO perguntas (aula_id, curso_id, modulo_id, texto, imagem_url, justificativa)
+            VALUES (?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$aulaId, $cursoId, $moduloId, $texto, $justificativa]);
+        $stmt->execute([$aulaId, $cursoId, $moduloId, $texto, $imagemUrl, $justificativa]);
         $perguntaId = $db->lastInsertId();
 
         // Insere as opções

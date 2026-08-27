@@ -400,11 +400,10 @@ require __DIR__ . '/layout/header.php';
 
     // Prepara payload
     const cart = getCarrinho();
-    const itens = cart.map(item => ({
-      curso_id: parseInt(item.curso_id),
-      vagas: parseInt(item.vagas),
-      com_prova: parseInt(item.com_prova || 0)
-    }));
+    const itens = cart.map(item => item.combo_id
+      ? { combo_id: parseInt(item.combo_id), vagas: parseInt(item.vagas) }
+      : { curso_id: parseInt(item.curso_id), vagas: parseInt(item.vagas), com_prova: parseInt(item.com_prova || 0) }
+    );
 
     const cupomCodigo = cupomAtivo ? cupomAtivo.codigo : '';
 

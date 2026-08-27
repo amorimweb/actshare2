@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../includes/db.php';
 require_once __DIR__ . '/../../../includes/auth.php';
+require_once __DIR__ . '/../../../includes/matriculas.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') methodNotAllowed();
 
@@ -26,7 +27,7 @@ if (!$stmt->fetch()) {
 }
 
 // 2. Busca tentativas anteriores
-$stmt = $db->prepare('SELECT id, aprovado, tentativas_restantes FROM quiz_resposta WHERE matricula_id = ? AND aula_id = ? LIMIT 1');
+$stmt = $db->prepare('SELECT id, aprovado, tentativas_restantes, iniciado_em FROM quiz_resposta WHERE matricula_id = ? AND aula_id = ? LIMIT 1');
 $stmt->execute([$matriculaId, $aulaId]);
 $respostaSalva = $stmt->fetch();
 
@@ -51,41 +52,8 @@ if ($bypassAvançar) {
     ');
     $stmt->execute([$matriculaId, $aulaId]);
 
-    // Recalcula progresso geral do curso e atualiza a matrícula
-    $stmtMat = $db->prepare('SELECT curso_id FROM matriculas WHERE id = ? LIMIT 1');
-    $stmtMat->execute([$matriculaId]);
-    $cursoId = (int)$stmtMat->fetchColumn();
+    recalcularConclusaoMatricula($db, $matriculaId);
 
-    $stmtAulas = $db->prepare('
-        SELECT COUNT(*) AS total 
-        FROM aulas a
-        JOIN modulos m ON a.modulo_id = m.id
-        WHERE m.curso_id = ?
-    ');
-    $stmtAulas->execute([$cursoId]);
-    $totalAulas = (int)$stmtAulas->fetchColumn();
-
-    $stmtProg = $db->prepare('
-        SELECT COUNT(*) AS concluidas 
-        FROM progresso_aula 
-        WHERE matricula_id = ? AND concluida = 1
-    ');
-    $stmtProg->execute([$matriculaId]);
-    $concluidas = (int)$stmtProg->fetchColumn();
-
-    $percentual = $totalAulas > 0 ? (int)round(($concluidas / $totalAulas) * 100) : 100;
-    if ($percentual > 100) $percentual = 100;
-
-    $concluido = ($percentual >= 100) ? 1 : 0;
-    $dataConclusaoMat = $concluido ? date('Y-m-d H:i:s') : null;
-
-    $stmtUpdateMat = $db->prepare('
-        UPDATE matriculas
-        SET progresso_total = ?, concluido = ?, data_conclusao = COALESCE(data_conclusao, ?)
-        WHERE id = ?
-    ');
-    $stmtUpdateMat->execute([$percentual, $concluido, $dataConclusaoMat, $matriculaId]);
-    
     jsonOk([
         'skipped' => true,
         'message' => 'Aula concluída. Você avançou sem aprovação no quizz.'
@@ -115,41 +83,84 @@ if (empty($perguntasSorteadas)) {
     jsonError('Nenhuma questão sorteada para este quizz foi localizada.', 400);
 }
 
+// Configuração de nota de corte e tipo de avaliação da aula
+$stmtAula = $db->prepare('SELECT e_prova, nota_corte_tipo, nota_corte_valor, tempo_limite_minutos FROM aulas WHERE id = ? LIMIT 1');
+$stmtAula->execute([$aulaId]);
+$aulaConfig = $stmtAula->fetch() ?: [];
+$eProva         = (int)($aulaConfig['e_prova'] ?? 0);
+$notaCorteTipo  = $aulaConfig['nota_corte_tipo']  ?? 'percentual';
+$notaCorteValor = (int)($aulaConfig['nota_corte_valor'] ?? 70);
+$tempoLimiteMin = (int)($aulaConfig['tempo_limite_minutos'] ?? 0);
+
+// Tempo controlado pelo servidor: mesmo que o cronômetro do navegador seja
+// manipulado, o tempo real decorrido desde "iniciado_em" (gravado quando a
+// prova foi aberta, em api/aluno/quiz/index.php) é quem manda. Passado o
+// limite (+ margem de tolerância pra reconexões), força o fim da prova.
+$tempoEsgotadoServidor = false;
+if ($eProva === 1 && $tempoLimiteMin > 0 && !empty($respostaSalva['iniciado_em'])) {
+    $margemToleranciaMin = 30; // cobre as pausas de reconexão já tratadas no cliente
+    $minutosDecorridos = (time() - strtotime($respostaSalva['iniciado_em'])) / 60;
+    if ($minutosDecorridos > ($tempoLimiteMin + $margemToleranciaMin)) {
+        $tempoEsgotadoServidor = true;
+    }
+}
+
 $acertos = 0;
+$naoRespondidas = 0;
 $total = count($perguntasSorteadas);
 $detalhesCorrecao = [];
 
 foreach ($perguntasSorteadas as $p) {
-    $opcaoEscolhida = (int)($respostas[$p['id']] ?? 0);
-    
-    // Busca opção correta para a pergunta
-    $stmt = $db->prepare('SELECT id, texto FROM opcoes WHERE pergunta_id = ? AND correta = 1 LIMIT 1');
+    // O front envia um array de ids marcados por pergunta (uma pergunta pode
+    // ter mais de uma alternativa correta). Aceita também um valor único
+    // (compatibilidade com integrações antigas que mandavam 1 id só).
+    $respostaBruta = $respostas[$p['id']] ?? [];
+    $opcoesEscolhidas = array_values(array_unique(array_map('intval', (array)$respostaBruta)));
+    if (empty($opcoesEscolhidas)) $naoRespondidas++;
+
+    // Busca todas as opções corretas para a pergunta
+    $stmt = $db->prepare('SELECT id, texto FROM opcoes WHERE pergunta_id = ? AND correta = 1');
     $stmt->execute([$p['id']]);
-    $opcaoCorreta = $stmt->fetch();
-    
-    // Verifica se acertou
-    $acertou = ($opcaoEscolhida === (int)($opcaoCorreta['id'] ?? 0));
+    $opcoesCorretas = $stmt->fetchAll();
+    $idsCorretos = array_map(fn($o) => (int)$o['id'], $opcoesCorretas);
+
+    // Acerta só quem marcou exatamente o mesmo conjunto de alternativas corretas
+    sort($opcoesEscolhidas);
+    $idsCorretosOrdenados = $idsCorretos;
+    sort($idsCorretosOrdenados);
+    $acertou = ($opcoesEscolhidas === $idsCorretosOrdenados);
     if ($acertou) {
         $acertos++;
     }
-    
+
     $detalhesCorrecao[] = [
-        'pergunta_id'        => $p['id'],
-        'texto_pergunta'     => $p['texto'],
-        'opcao_escolhida_id' => $opcaoEscolhida,
-        'opcao_correta_id'   => (int)($opcaoCorreta['id'] ?? 0),
-        'texto_correta'      => $opcaoCorreta['texto'] ?? '',
-        'acertou'            => $acertou,
-        'justificativa'      => $p['justificativa'] ?: 'Resposta correta: ' . ($opcaoCorreta['texto'] ?? '')
+        'pergunta_id'         => $p['id'],
+        'texto_pergunta'      => $p['texto'],
+        'opcoes_escolhidas'   => $opcoesEscolhidas,
+        'opcoes_corretas'     => $idsCorretos,
+        'textos_corretos'     => array_map(fn($o) => $o['texto'], $opcoesCorretas),
+        'acertou'             => $acertou,
+        'justificativa'       => $eProva ? null : ($p['justificativa'] ?: null),
     ];
 }
 
 $nota = $total > 0 ? (int)round(($acertos / $total) * 100) : 0;
-$aprovado = $nota >= 70;
+
+// Nota de corte configurada pelo admin na aula: por qtd. de questões certas
+// ou por percentual — antes disso ficava fixo em 70%, ignorando o cadastro.
+$aprovado = ($notaCorteTipo === 'questoes')
+    ? ($acertos >= $notaCorteValor)
+    : ($nota >= $notaCorteValor);
 
 // Decrementa tentativas se falhar
 if (!$aprovado) {
     $tentativasRestantes--;
+}
+
+// Tempo esgotado de verdade (validado pelo servidor): não há mais direito a
+// refazer, a prova encerrou.
+if ($tempoEsgotadoServidor && !$aprovado) {
+    $tentativasRestantes = 0;
 }
 
 // 4. Salva ou atualiza resultado
@@ -169,20 +180,16 @@ if ($respostaSalva) {
 }
 
 // Se for prova/exame oficial, registra na tabela avaliacao_tentativas
-$stmtAula = $db->prepare('SELECT e_prova FROM aulas WHERE id = ? LIMIT 1');
-$stmtAula->execute([$aulaId]);
-$eProva = (int)$stmtAula->fetchColumn();
-
 if ($eProva === 1) {
     $resultado = $aprovado ? 'aprovado' : 'reprovado';
-    $erros = $total - $acertos;
+    $erros = $total - $acertos - $naoRespondidas; // respondidas errado (exclui as não respondidas)
     $respostasJson = json_encode($detalhesCorrecao, JSON_UNESCAPED_UNICODE);
-    
+
     $stmtLog = $db->prepare('
         INSERT INTO avaliacao_tentativas (matricula_id, aula_id, total_questoes, acertos, erros, nao_respondidas, nota, resultado, respostas_json)
-        VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ');
-    $stmtLog->execute([$matriculaId, $aulaId, $total, $acertos, $erros, $nota, $resultado, $respostasJson]);
+    $stmtLog->execute([$matriculaId, $aulaId, $total, $acertos, $erros, $naoRespondidas, $nota, $resultado, $respostasJson]);
 }
 
 // 5. Se aprovado, marca aula como concluída no progresso
@@ -194,40 +201,7 @@ if ($aprovado) {
     ');
     $stmt->execute([$matriculaId, $aulaId]);
 
-    // Recalcula progresso geral do curso e atualiza a matrícula
-    $stmtMat = $db->prepare('SELECT curso_id FROM matriculas WHERE id = ? LIMIT 1');
-    $stmtMat->execute([$matriculaId]);
-    $cursoId = (int)$stmtMat->fetchColumn();
-
-    $stmtAulas = $db->prepare('
-        SELECT COUNT(*) AS total 
-        FROM aulas a
-        JOIN modulos m ON a.modulo_id = m.id
-        WHERE m.curso_id = ?
-    ');
-    $stmtAulas->execute([$cursoId]);
-    $totalAulas = (int)$stmtAulas->fetchColumn();
-
-    $stmtProg = $db->prepare('
-        SELECT COUNT(*) AS concluidas 
-        FROM progresso_aula 
-        WHERE matricula_id = ? AND concluida = 1
-    ');
-    $stmtProg->execute([$matriculaId]);
-    $concluidas = (int)$stmtProg->fetchColumn();
-
-    $percentual = $totalAulas > 0 ? (int)round(($concluidas / $totalAulas) * 100) : 100;
-    if ($percentual > 100) $percentual = 100;
-
-    $concluido = ($percentual >= 100) ? 1 : 0;
-    $dataConclusaoMat = $concluido ? date('Y-m-d H:i:s') : null;
-
-    $stmtUpdateMat = $db->prepare('
-        UPDATE matriculas
-        SET progresso_total = ?, concluido = ?, data_conclusao = COALESCE(data_conclusao, ?)
-        WHERE id = ?
-    ');
-    $stmtUpdateMat->execute([$percentual, $concluido, $dataConclusaoMat, $matriculaId]);
+    recalcularConclusaoMatricula($db, $matriculaId);
 }
 
 jsonOk([

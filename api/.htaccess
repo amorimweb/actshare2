@@ -1,5 +1,17 @@
 ﻿Options -Indexes
+
+# mod_dir redireciona (301) qualquer chamada sem barra final para uma rota-
+# pasta (ex: POST /api/cursos, que é a pasta física api/cursos/) adicionando
+# a barra — e o fetch() do navegador rebaixa o método para GET ao seguir o
+# redirect, fazendo "criar" silenciosamente virar "listar". Desliga esse
+# redirect automático; as duas regras de rewrite abaixo assumem o roteamento.
+DirectorySlash Off
+
 RewriteEngine On
+
+# Roteia essas coleções explicitamente para router.php ANTES da checagem
+# genérica de arquivo/pasta abaixo, então nunca colidem com o diretório físico.
+RewriteRule ^(cursos|categorias|instrutores|modulos|aulas|combos)$ router.php?_route=$1 [QSA,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

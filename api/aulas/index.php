@@ -10,8 +10,8 @@ if (empty($body['modulo_id']) || empty($body['titulo'])) jsonError('modulo_id e 
 
 $db   = getDB();
 $stmt = $db->prepare('
-    INSERT INTO aulas (modulo_id, titulo, ordem, video_url, duracao_min, descricao, tipo, e_prova, quizz_qtd_perguntas, exemplar_global, nota_corte_tipo, nota_corte_valor, tempo_limite_minutos, bloquear_proctoring)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO aulas (modulo_id, titulo, ordem, video_url, duracao_min, descricao, tipo, e_prova, publica, quizz_qtd_perguntas, exemplar_global, nota_corte_tipo, nota_corte_valor, tempo_limite_minutos, bloquear_proctoring)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ');
 $stmt->execute([
     $body['modulo_id'],
@@ -22,6 +22,7 @@ $stmt->execute([
     $body['descricao']           ?? null,
     $body['tipo']                ?? 'video',
     $body['e_prova']             ?? 0,
+    $body['publica']             ?? 0,
     $body['quizz_qtd_perguntas'] ?? 1,
     $body['exemplar_global']     ?? 0,
     $body['nota_corte_tipo']     ?? 'percentual',

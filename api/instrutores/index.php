@@ -15,8 +15,8 @@ if ($method === 'POST') {
     if (empty($body['nome'])) jsonError('Nome é obrigatório.', 400);
 
     $db   = getDB();
-    $stmt = $db->prepare('INSERT INTO instrutores (nome, qualificacao1, qualificacao2, avatar_url, descricao) VALUES (?, ?, ?, ?, ?)');
-    $stmt->execute([$body['nome'], $body['qualificacao1'] ?? null, $body['qualificacao2'] ?? null, $body['avatar_url'] ?? null, $body['descricao'] ?? null]);
+    $stmt = $db->prepare('INSERT INTO instrutores (nome, qualificacao1, qualificacao2, avatar_url, assinatura_url, descricao) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$body['nome'], $body['qualificacao1'] ?? null, $body['qualificacao2'] ?? null, $body['avatar_url'] ?? null, $body['assinatura_url'] ?? null, $body['descricao'] ?? null]);
 
     $id   = $db->lastInsertId();
     $stmt = $db->prepare('SELECT * FROM instrutores WHERE id = ?');

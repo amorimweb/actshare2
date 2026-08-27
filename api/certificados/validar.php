@@ -37,6 +37,18 @@ if (count($partes) >= 2) {
         $cert = $stmt->fetch();
 
         if ($cert) {
+            // Mesma regra usada na tela do aluno (api/aluno/curso.php): só é
+            // "aprovado com sucesso" quem passou numa prova oficial (e_prova).
+            // Quem só completou o quizz recebe "participou do treinamento".
+            $stmtExam = $db->prepare('
+                SELECT COUNT(*)
+                FROM quiz_resposta qr
+                JOIN aulas a ON qr.aula_id = a.id
+                WHERE qr.matricula_id = ? AND a.e_prova = 1 AND qr.aprovado = 1
+            ');
+            $stmtExam->execute([$cert['id']]);
+            $tipoTexto = ((int)$stmtExam->fetchColumn() > 0) ? 'aprovacao' : 'participacao';
+
             jsonOk([
                 'tipo'                 => 'sistema',
                 'cliente_nome'         => $cert['aluno_nome'],
@@ -44,7 +56,7 @@ if (count($partes) >= 2) {
                 'curso_nome'           => $cert['nome_certificado'] ?: $cert['curso_nome'],
                 'carga_horaria'        => (int)$cert['carga_horaria_horas'],
                 'data_conclusao'       => $cert['data_conclusao'],
-                'tipo_texto'           => 'aprovacao', // Por padrão, os concluidos no sistema são certificados de aprovação/conclusão
+                'tipo_texto'           => $tipoTexto,
                 'instrutor_nome'       => $cert['instrutor_nome'] ?: 'ActShare',
                 'assinatura_url'       => $cert['assinatura_url'] ?: '',
                 'codigo_autenticidade' => $codigo,

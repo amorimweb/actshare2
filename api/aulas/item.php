@@ -18,6 +18,7 @@ if ($method === 'PUT') {
         'descricao'            => 'descricao', 
         'tipo'                 => 'tipo',
         'e_prova'              => 'e_prova',
+        'publica'              => 'publica',
         'quizz_qtd_perguntas'  => 'quizz_qtd_perguntas',
         'exemplar_global'      => 'exemplar_global',
         'nota_corte_tipo'      => 'nota_corte_tipo',

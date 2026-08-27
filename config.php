@@ -20,6 +20,12 @@ define('DB_PASS',     env('DB_PASSWORD', ''));
 define('DB_NAME',     env('DB_NAME', 'actshare'));
 define('JWT_SECRET',  env('JWT_SECRET', 'change-me-in-production'));
 define('SITE_URL',    env('SITE_URL', 'http://localhost'));
+
+// Integração de pagamento real (ASAAS). Sem chave configurada, o checkout
+// segue no modo simulado atual (zero regressão) — ver includes/asaas.php.
+define('ASAAS_API_KEY', env('ASAAS_API_KEY', ''));
+define('ASAAS_ENV',     env('ASAAS_ENV', 'sandbox')); // sandbox | production
+define('ASAAS_WEBHOOK_TOKEN', env('ASAAS_WEBHOOK_TOKEN', ''));
 define('COOKIE_NAME', 'act-token');
 define('JWT_TTL',     8 * 3600); // 8 horas
 define('BASE_PATH',   rtrim(parse_url(SITE_URL, PHP_URL_PATH) ?? '', '/'));

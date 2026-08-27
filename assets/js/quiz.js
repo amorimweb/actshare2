@@ -108,11 +108,14 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
     return `
       <div class="bg-gray-50/70 border border-gray-100 rounded-2xl p-5 mb-5">
         <p class="font-semibold text-gray-800 text-sm mb-4 leading-relaxed">${i + 1}. ${esc(p.texto)}</p>
+        ${p.imagem_url ? `<img src="${esc(p.imagem_url)}" alt="" class="max-w-full rounded-xl mb-4 border border-gray-200">` : ''}
         <div class="space-y-2.5" id="opcoes-${p.id}">
           ${p.opcoes.map(o => {
             let labelClass = "flex items-center gap-3 cursor-pointer group p-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all";
-            let radioHtml = `<input type="radio" name="q${p.id}" value="${o.id}" class="w-4 h-4 accent-primary" onchange="quizResponder(${p.id}, ${o.id})">`;
-            
+            // Checkbox em vez de radio: uma pergunta pode ter mais de uma
+            // alternativa correta (o admin marca quantas quiser em Banco de Questões).
+            let radioHtml = `<input type="checkbox" name="q${p.id}" value="${o.id}" class="w-4 h-4 accent-primary rounded" onchange="quizResponder(${p.id}, ${o.id}, this.checked)">`;
+
             if (finalizado) {
               radioHtml = ''; // Não exibe inputs no gabarito
               if (o.correta) {
@@ -278,9 +281,16 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
   }
 }
 
-function quizResponder(perguntaId, opcaoId) {
+function quizResponder(perguntaId, opcaoId, checked) {
   if (!window._quizRespostas) window._quizRespostas = {};
-  window._quizRespostas[perguntaId] = opcaoId;
+  const atuais = window._quizRespostas[perguntaId] || [];
+  if (checked) {
+    if (!atuais.includes(opcaoId)) atuais.push(opcaoId);
+  } else {
+    const idx = atuais.indexOf(opcaoId);
+    if (idx > -1) atuais.splice(idx, 1);
+  }
+  window._quizRespostas[perguntaId] = atuais;
 }
 
 function refazerQuizzForm() {
@@ -295,8 +305,8 @@ function refazerQuizzForm() {
   }
   
   // Limpa inputs selecionados
-  document.querySelectorAll('#quiz-questions-list input[type="radio"]').forEach(radio => {
-    radio.checked = false;
+  document.querySelectorAll('#quiz-questions-list input[type="checkbox"]').forEach(chk => {
+    chk.checked = false;
   });
   window._quizRespostas = {};
 }
@@ -374,6 +384,7 @@ async function enviarRespostasQuiz(aulaId, matriculaId) {
     btn.disabled = false;
     btn.textContent = 'Enviar Respostas';
   }
+}
 
 // ============================================================
 // Questionários Dinâmicos de Fixação (Mapeados após cada aula)

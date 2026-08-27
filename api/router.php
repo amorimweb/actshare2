@@ -43,21 +43,36 @@ $routes = [
     // categorias
     ['GET',    'categorias',           __DIR__ . '/categorias/index.php'],
     ['POST',   'categorias',           __DIR__ . '/categorias/index.php'],
+    ['PUT',    'categorias/:id',       __DIR__ . '/categorias/item.php'],
     ['DELETE', 'categorias/:id',       __DIR__ . '/categorias/item.php'],
 
     // instrutores
     ['GET',    'instrutores',          __DIR__ . '/instrutores/index.php'],
     ['POST',   'instrutores',          __DIR__ . '/instrutores/index.php'],
+    ['GET',    'instrutores/:id',      __DIR__ . '/instrutores/item.php'],
+    ['PUT',    'instrutores/:id',      __DIR__ . '/instrutores/item.php'],
+    ['DELETE', 'instrutores/:id',      __DIR__ . '/instrutores/item.php'],
 
     // modulos
     ['POST',   'modulos',              __DIR__ . '/modulos/index.php'],
     ['PUT',    'modulos/:id',          __DIR__ . '/modulos/item.php'],
     ['DELETE', 'modulos/:id',          __DIR__ . '/modulos/item.php'],
 
+    // combos
+    ['GET',    'combos',               __DIR__ . '/combos/index.php'],
+    ['POST',   'combos',               __DIR__ . '/combos/index.php'],
+    ['GET',    'combos/:id',           __DIR__ . '/combos/item.php'],
+    ['PUT',    'combos/:id',           __DIR__ . '/combos/item.php'],
+    ['DELETE', 'combos/:id',           __DIR__ . '/combos/item.php'],
+
     // aulas
     ['POST',   'aulas',                __DIR__ . '/aulas/index.php'],
     ['PUT',    'aulas/:id',            __DIR__ . '/aulas/item.php'],
     ['DELETE', 'aulas/:id',            __DIR__ . '/aulas/item.php'],
+    ['GET',    'aulas/:id/materiais',  __DIR__ . '/aulas/materiais.php'],
+    ['POST',   'aulas/:id/materiais',  __DIR__ . '/aulas/materiais.php'],
+    ['DELETE', 'aulas/materiais/:id',  __DIR__ . '/aulas/materiais_item.php'],
+    ['GET',    'aulas/materiais/:id/download', __DIR__ . '/aulas/materiais_download.php'],
 
     // aluno
     ['POST',   'aluno/matricular',     __DIR__ . '/aluno/matricular.php'],
@@ -89,12 +104,17 @@ $routes = [
     ['POST',   'checkout/validar-cupom',     __DIR__ . '/checkout/validar-cupom.php'],
     ['POST',   'checkout/criar-pedido',      __DIR__ . '/checkout/criar-pedido.php'],
     ['POST',   'checkout/simular-pagamento', __DIR__ . '/checkout/simular-pagamento.php'],
+    ['POST',   'checkout/asaas-webhook',     __DIR__ . '/checkout/asaas-webhook.php'],
 
     // admin
     ['GET',    'admin/usuarios',       __DIR__ . '/admin/usuarios.php'],
+    ['PUT',    'admin/usuarios',       __DIR__ . '/admin/usuarios.php'],
     ['PATCH',  'admin/usuarios',       __DIR__ . '/admin/usuarios.php'],
+    ['GET',    'admin/configuracoes',  __DIR__ . '/admin/configuracoes.php'],
+    ['PUT',    'admin/configuracoes',  __DIR__ . '/admin/configuracoes.php'],
     ['GET',    'admin/cupons',         __DIR__ . '/admin/cupons.php'],
     ['POST',   'admin/cupons',         __DIR__ . '/admin/cupons.php'],
+    ['PUT',    'admin/cupons/:id',     __DIR__ . '/admin/cupons_item.php'],
     ['DELETE', 'admin/cupons/:id',     __DIR__ . '/admin/cupons_item.php'],
     ['GET',    'admin/perguntas',      __DIR__ . '/admin/perguntas.php'],
     ['POST',   'admin/perguntas',      __DIR__ . '/admin/perguntas.php'],

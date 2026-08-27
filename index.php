@@ -31,9 +31,11 @@ $routes = [
     'admin'                         => 'admin/dashboard',
     'admin/cursos'                  => 'admin/cursos',
     'admin/categorias'              => 'admin/categorias',
+    'admin/instrutores'             => 'admin/instrutores',
     'admin/usuarios'                => 'admin/usuarios',
     'admin/perguntas'               => 'admin/perguntas',
     'admin/cupons'                  => 'admin/cupons',
+    'admin/combos'                  => 'admin/combos',
     'admin/certificados'            => 'admin/certificados',
     'admin/satisfacao'              => 'admin/satisfacao',
     'validar-certificado'           => 'validar-certificado',
@@ -42,6 +44,7 @@ $routes = [
 // Rotas dinâmicas com parâmetro
 $dynamicRoutes = [
     '#^cursos/(\d+)$#'       => ['view' => 'curso-detalhe',   'param' => 'id'],
+    '#^combos/(\d+)$#'       => ['view' => 'combo-detalhe',   'param' => 'id'],
     '#^painel/curso/(\d+)$#' => ['view' => 'painel-curso',    'param' => 'id'],
     '#^admin/cursos/(\d+)$#' => ['view' => 'admin/curso-detalhe', 'param' => 'id'],
     '#^gestor/curso/(\d+)$#' => ['view' => 'gestor/curso-detalhe', 'param' => 'id'],

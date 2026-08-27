@@ -42,6 +42,16 @@ if ($method === 'GET') {
     ] : null;
     $curso['modulos'] = $modulos;
 
+    // Pré-requisitos: cursos que precisam ser concluídos antes deste
+    $stmtPre = $db->prepare('
+        SELECT cp.prerequisito_curso_id AS id, c2.titulo
+        FROM curso_prerequisitos cp
+        JOIN cursos c2 ON cp.prerequisito_curso_id = c2.id
+        WHERE cp.curso_id = ?
+    ');
+    $stmtPre->execute([$id]);
+    $curso['prerequisitos'] = $stmtPre->fetchAll();
+
     jsonOk($curso);
 }
 
@@ -50,11 +60,15 @@ if ($method === 'PUT') {
     requireAdmin();
     $body   = json_decode(file_get_contents('php://input'), true) ?? [];
     $fields = [
-        'titulo', 'nome_certificado', 'codigo', 'descricao', 'thumb_url', 
-        'ativo', 'publico', 'categoria_id', 'instrutor_id', 'preco', 
-        'carga_horaria_horas', 'prazo_acesso_dias', 'disponivel_loja', 
-        'certificado_template_url', 'certificado_config', 'certificado_liberacao', 
-        'exibir_instrutor'
+        'titulo', 'nome_certificado', 'codigo', 'descricao', 'thumb_url',
+        'ativo', 'publico', 'categoria_id', 'instrutor_id', 'preco',
+        'carga_horaria_horas', 'prazo_acesso_dias', 'disponivel_loja',
+        'certificado_template_url', 'certificado_config', 'certificado_liberacao',
+        'exibir_instrutor',
+        // Descrição estendida da página do curso (loja) + toggles de visibilidade
+        'video_url_explicativo', 'diferencial', 'conteudo_programatico', 'publico_alvo', 'condicoes',
+        'vis_nome', 'vis_breve_descricao', 'vis_carga_horaria', 'vis_valor', 'vis_descricao',
+        'vis_video', 'vis_diferencial', 'vis_conteudo', 'vis_publico_alvo', 'vis_condicoes',
     ];
 
     $set    = [];
@@ -65,10 +79,23 @@ if ($method === 'PUT') {
             $params[] = $body[$f];
         }
     }
-    if (!$set) jsonError('Nenhum campo para atualizar.', 400);
+    if ($set) {
+        $params[] = $id;
+        getDB()->prepare('UPDATE cursos SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($params);
+    }
 
-    $params[] = $id;
-    getDB()->prepare('UPDATE cursos SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($params);
+    // Pré-requisitos (lista completa substitui a anterior)
+    if (array_key_exists('prerequisitos', $body)) {
+        $db = getDB();
+        $db->prepare('DELETE FROM curso_prerequisitos WHERE curso_id = ?')->execute([$id]);
+        $stmtIns = $db->prepare('INSERT IGNORE INTO curso_prerequisitos (curso_id, prerequisito_curso_id) VALUES (?, ?)');
+        foreach ((array)$body['prerequisitos'] as $preId) {
+            $preId = (int)$preId;
+            if ($preId && $preId !== $id) $stmtIns->execute([$id, $preId]);
+        }
+    }
+
+    if (!$set && !array_key_exists('prerequisitos', $body)) jsonError('Nenhum campo para atualizar.', 400);
 
     $stmt = getDB()->prepare('SELECT * FROM cursos WHERE id = ?');
     $stmt->execute([$id]);

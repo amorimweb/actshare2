@@ -4,7 +4,32 @@
 
 <div class="max-w-7xl mx-auto px-4 py-10">
   <h1 class="text-3xl font-bold text-gray-800 mb-2">Catálogo de Treinamentos</h1>
-  <p class="text-gray-500 mb-8">Encontre o treinamento ideal para você e sua equipe.</p>
+  <p class="text-gray-500 mb-6">Encontre o treinamento ideal para você e sua equipe.</p>
+
+  <!-- Grupo de Produtos + Livre/Pago -->
+  <div class="flex flex-wrap items-center gap-6 mb-8 pb-6 border-b border-gray-100">
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-bold text-gray-500 uppercase">Grupo de Produtos</span>
+      <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+        <input type="radio" name="grupo-produto" value="treinamentos" checked onchange="mudarGrupoProduto('treinamentos')" class="accent-primary"> Treinamentos
+      </label>
+      <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+        <input type="radio" name="grupo-produto" value="combos" onchange="mudarGrupoProduto('combos')" class="accent-primary"> Combos
+      </label>
+    </div>
+    <div id="filtro-livre-pago-wrap" class="flex items-center gap-3">
+      <span class="text-xs font-bold text-gray-500 uppercase">Livre / Pago</span>
+      <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+        <input type="radio" name="livre-pago" value="todos" checked onchange="filtrarLivrePago('todos')" class="accent-primary"> Todos
+      </label>
+      <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+        <input type="radio" name="livre-pago" value="livre" onchange="filtrarLivrePago('livre')" class="accent-primary"> Livre
+      </label>
+      <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+        <input type="radio" name="livre-pago" value="pago" onchange="filtrarLivrePago('pago')" class="accent-primary"> Pago
+      </label>
+    </div>
+  </div>
 
   <div id="cursos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     <div class="col-span-full text-center py-16 text-gray-400">
@@ -15,7 +40,7 @@
   <p id="cursos-empty" class="hidden text-center py-16 text-gray-400">Nenhum curso encontrado.</p>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=3"></script>
+<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=4"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     carregarPaginaCursos();

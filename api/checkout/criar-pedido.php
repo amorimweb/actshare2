@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/matriculas.php';
+require_once __DIR__ . '/../../includes/configuracoes.php';
+require_once __DIR__ . '/../../includes/asaas.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') methodNotAllowed();
 
@@ -16,50 +19,83 @@ if (empty($itens)) {
 }
 
 $db = getDB();
+$config = getConfiguracoes($db);
 
 $totalBruto = 0.00;
 $totalDesconto = 0.00;
 $itensProcessados = [];
 
-// 1. Processar cada item do carrinho
+// 1. Processar cada item do carrinho (curso avulso ou combo)
 foreach ($itens as $item) {
+    $comboId   = (int)($item['combo_id']   ?? 0);
     $cursoId   = (int)($item['curso_id']   ?? 0);
     $vagas     = (int)($item['vagas']      ?? 1);
     $comProva  = (int)($item['com_prova']  ?? 0);
-    
+
     if ($vagas <= 0) $vagas = 1;
-    
+
+    if ($comboId) {
+        $stmt = $db->prepare('SELECT id, preco FROM combos WHERE id = ? AND ativo = 1 LIMIT 1');
+        $stmt->execute([$comboId]);
+        $combo = $stmt->fetch();
+        if (!$combo) jsonError('Um ou mais combos selecionados não estão disponíveis.', 404);
+
+        // Todos os cursos do combo precisam ter os pré-requisitos cumpridos
+        $stmtCursos = $db->prepare('SELECT curso_id FROM combo_itens WHERE combo_id = ?');
+        $stmtCursos->execute([$comboId]);
+        foreach ($stmtCursos->fetchAll() as $ci) {
+            $pendentes = cursosPrerequisitosPendentes($db, $user['id'], (int)$ci['curso_id']);
+            if ($pendentes) {
+                $nomes = implode(', ', array_column($pendentes, 'titulo'));
+                jsonError("Para comprar este combo você precisa concluir antes: $nomes.", 400);
+            }
+        }
+
+        $precoUnitario = (float)$combo['preco'];
+        $subtotalItem = $precoUnitario * $vagas;
+        $totalBruto += $subtotalItem;
+
+        $itensProcessados[] = [
+            'combo_id'       => $comboId,
+            'curso_id'       => null,
+            'vagas'          => $vagas,
+            'preco_unitario' => $precoUnitario,
+            'com_prova'      => 0,
+        ];
+        continue;
+    }
+
     // Busca dados do curso
     $stmt = $db->prepare('SELECT id, preco FROM cursos WHERE id = ? AND ativo = 1 LIMIT 1');
     $stmt->execute([$cursoId]);
     $curso = $stmt->fetch();
-    
+
     if (!$curso) {
         jsonError('Um ou mais cursos selecionados não estão disponíveis.', 404);
     }
-    
+
+    $pendentes = cursosPrerequisitosPendentes($db, $user['id'], $cursoId);
+    if ($pendentes) {
+        $nomes = implode(', ', array_column($pendentes, 'titulo'));
+        jsonError("Para comprar este curso você precisa concluir antes: $nomes.", 400);
+    }
+
     $precoUnitario = (float)$curso['preco'];
     if ($comProva === 1) {
         $precoUnitario += 150.00;
     }
     $subtotalItem = $precoUnitario * $vagas;
     $totalBruto += $subtotalItem;
-    
-    // Aplica Desconto Progressivo por vagas (B2B)
-    $descontoProgPercentual = 0;
-    if ($vagas >= 2 && $vagas <= 5) {
-        $descontoProgPercentual = 5;
-    } elseif ($vagas >= 6 && $vagas <= 10) {
-        $descontoProgPercentual = 10;
-    } elseif ($vagas > 10) {
-        $descontoProgPercentual = 15;
-    }
-    
+
+    // Aplica Desconto Progressivo por vagas (B2B) — faixas configuráveis pelo admin
+    $descontoProgPercentual = getDescontoProgressivoPercentual($config, $vagas);
+
     if ($descontoProgPercentual > 0) {
         $totalDesconto += $subtotalItem * ($descontoProgPercentual / 100);
     }
-    
+
     $itensProcessados[] = [
+        'combo_id'       => null,
         'curso_id'       => $cursoId,
         'vagas'          => $vagas,
         'preco_unitario' => $precoUnitario,
@@ -73,8 +109,8 @@ $stmt->execute([$user['id']]);
 $concluidos = (int)$stmt->fetchColumn();
 
 if ($concluidos > 0) {
-    // 10% de desconto adicional sobre o saldo acumulado
-    $totalDesconto += ($totalBruto - $totalDesconto) * 0.10;
+    // Desconto adicional sobre o saldo acumulado (% configurável pelo admin)
+    $totalDesconto += ($totalBruto - $totalDesconto) * ((float)$config['desconto_fidelidade_percentual'] / 100);
 }
 
 // 3. Processar cupom se fornecido
@@ -123,11 +159,11 @@ try {
     $pedidoId = (int)$db->lastInsertId();
     
     $stmtItem = $db->prepare('
-        INSERT INTO itens_pedido (pedido_id, curso_id, vagas, preco_unitario, com_prova)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO itens_pedido (pedido_id, curso_id, combo_id, vagas, preco_unitario, com_prova)
+        VALUES (?, ?, ?, ?, ?, ?)
     ');
     foreach ($itensProcessados as $it) {
-        $stmtItem->execute([$pedidoId, $it['curso_id'], $it['vagas'], $it['preco_unitario'], $it['com_prova']]);
+        $stmtItem->execute([$pedidoId, $it['curso_id'], $it['combo_id'], $it['vagas'], $it['preco_unitario'], $it['com_prova']]);
     }
     
     // Se usou cupom comum, incrementa usos
@@ -140,27 +176,45 @@ try {
     }
     
     $db->commit();
-    
-    // 5. Retorna dados simulados do pagamento
+
     $responsePayload = [
         'pedido_id'      => $pedidoId,
         'total_liquido'  => $totalLiquido,
         'forma_pagamento'=> $formaPagamento,
     ];
-    
-    if ($formaPagamento === 'pix') {
+
+    // Com ASAAS_API_KEY configurada no .env, gera uma cobrança real; a
+    // confirmação de pagamento chega depois via webhook (asaas-webhook.php),
+    // que libera as matrículas. Sem chave, mantém a simulação de sempre
+    // (o botão "simular pagamento" libera na hora).
+    if (asaasConfigured()) {
+        try {
+            $cobranca = asaasCriarCobranca($db, $user, $pedidoId, $totalLiquido, $formaPagamento);
+            $responsePayload = array_merge($responsePayload, $cobranca);
+            $responsePayload['modo'] = 'real';
+        } catch (Exception $e) {
+            // Se o ASAAS falhar, não trava a compra — cai pro fluxo simulado
+            // e loga o motivo pra investigação manual do admin.
+            error_log('Falha ao criar cobrança ASAAS para pedido ' . $pedidoId . ': ' . $e->getMessage());
+            $responsePayload['modo'] = 'simulado_fallback';
+        }
+    } else {
+        $responsePayload['modo'] = 'simulado';
+    }
+
+    if (!isset($responsePayload['pix_code']) && $formaPagamento === 'pix') {
         $responsePayload['pix_code'] = '00020101021226830014br.gov.bcb.pix2561pix.example.com/qr/v2/cob-simulada-actshare-' . $pedidoId;
         $responsePayload['pix_qr'] = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($responsePayload['pix_code']);
-    } elseif ($formaPagamento === 'boleto') {
+    } elseif (!isset($responsePayload['boleto_barcode']) && $formaPagamento === 'boleto') {
         $responsePayload['boleto_barcode'] = '34191.79001 01043.513184 91020.150008 7 90000000000000';
         $responsePayload['boleto_pdf'] = '#';
-    } else {
-        // Cartão de Crédito -> Simula sucesso imediato
+    } elseif ($formaPagamento === 'cartao' && !isset($responsePayload['invoice_url'])) {
+        // Cartão de Crédito sem ASAAS -> Simula sucesso imediato
         $responsePayload['cartao_sucesso'] = true;
     }
-    
+
     jsonOk($responsePayload);
-    
+
 } catch (Exception $e) {
     $db->rollBack();
     jsonError($e->getMessage(), 500);

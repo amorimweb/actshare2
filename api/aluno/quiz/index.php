@@ -27,7 +27,7 @@ if (!$matricula) {
 $matriculaId = (int)$matricula['id'];
 
 // 2. Busca se o aluno já respondeu ou possui tentativas salvas
-$stmt = $db->prepare('SELECT aprovado, tentativas_restantes FROM quiz_resposta WHERE matricula_id = ? AND aula_id = ? LIMIT 1');
+$stmt = $db->prepare('SELECT id, aprovado, tentativas_restantes, iniciado_em FROM quiz_resposta WHERE matricula_id = ? AND aula_id = ? LIMIT 1');
 $stmt->execute([$matriculaId, $id]);
 $resposta = $stmt->fetch();
 
@@ -35,12 +35,27 @@ $aprovado = $resposta ? (bool)$resposta['aprovado'] : false;
 $tentativasRestantes = $resposta ? (int)$resposta['tentativas_restantes'] : 5;
 $finalizado = $aprovado || ($tentativasRestantes <= 0);
 
+// Tempo de prova controlado pelo servidor: grava o instante em que o aluno
+// abriu a prova na primeira vez, pra responder.php poder validar o tempo
+// decorrido de verdade (antes disso o cronômetro só existia no navegador).
+$tempoLimite = (int)$matricula['tempo_limite_minutos'];
+if ($matricula['e_prova'] && $tempoLimite > 0 && !$finalizado) {
+    if ($resposta && !$resposta['iniciado_em']) {
+        $db->prepare('UPDATE quiz_resposta SET iniciado_em = NOW() WHERE id = ?')->execute([$resposta['id']]);
+    } elseif (!$resposta) {
+        $db->prepare('
+            INSERT INTO quiz_resposta (matricula_id, aula_id, iniciado_em, tentativas_restantes)
+            VALUES (?, ?, NOW(), 5)
+        ')->execute([$matriculaId, $id]);
+    }
+}
+
 // 3. Busca se já há perguntas sorteadas para esta matrícula/aula
 $stmt = $db->prepare('
-    SELECT p.id, p.texto, p.justificativa 
-    FROM quiz_perguntas_sorteadas qps 
-    JOIN perguntas p ON qps.pergunta_id = p.id 
-    WHERE qps.matricula_id = ? AND qps.aula_id = ? 
+    SELECT p.id, p.texto, p.imagem_url, p.justificativa
+    FROM quiz_perguntas_sorteadas qps
+    JOIN perguntas p ON qps.pergunta_id = p.id
+    WHERE qps.matricula_id = ? AND qps.aula_id = ?
     ORDER BY p.id
 ');
 $stmt->execute([$matriculaId, $id]);
@@ -56,7 +71,7 @@ if (empty($perguntas)) {
     if ($qtdSortear <= 0) $qtdSortear = 1;
 
     // Busca todas as perguntas disponíveis no pool da aula
-    $stmt = $db->prepare('SELECT id, texto, justificativa FROM perguntas WHERE aula_id = ?');
+    $stmt = $db->prepare('SELECT id, texto, imagem_url, justificativa FROM perguntas WHERE aula_id = ?');
     $stmt->execute([$id]);
     $pool = $stmt->fetchAll();
 
@@ -120,8 +135,14 @@ foreach ($perguntas as &$p) {
     }
 }
 
+// Re-lê iniciado_em (pode ter acabado de ser gravado acima)
+$stmt = $db->prepare('SELECT iniciado_em FROM quiz_resposta WHERE matricula_id = ? AND aula_id = ? LIMIT 1');
+$stmt->execute([$matriculaId, $id]);
+$iniciadoEm = $stmt->fetchColumn() ?: null;
+
 jsonOk([
     'perguntas'            => $perguntas,
+    'iniciado_em'          => $iniciadoEm,
     'aprovado'             => $aprovado,
     'tentativas_restantes' => $tentativasRestantes,
     'finalizado'           => $finalizado,

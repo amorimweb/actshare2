@@ -95,6 +95,11 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
         Categorias
       </a>
 
+      <a href="<?= BASE_PATH ?>/admin/instrutores" class="sidebar-link <?= $adminPath === 'admin/instrutores' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        Instrutores
+      </a>
+
       <a href="<?= BASE_PATH ?>/admin/perguntas" class="sidebar-link <?= $adminPath === 'admin/perguntas' ? 'active' : '' ?>">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Banco de Questões
@@ -110,6 +115,11 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
       <a href="<?= BASE_PATH ?>/admin/cupons" class="sidebar-link <?= $adminPath === 'admin/cupons' ? 'active' : '' ?>">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
         Cupons de Desconto
+      </a>
+
+      <a href="<?= BASE_PATH ?>/admin/combos" class="sidebar-link <?= $adminPath === 'admin/combos' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Combos
       </a>
 
       <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Certificados</p>

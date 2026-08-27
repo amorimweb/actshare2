@@ -170,9 +170,11 @@ require __DIR__ . '/layout/header.php';
               <h4 class="font-bold text-gray-800 text-sm line-clamp-1">${esc(item.titulo)}</h4>
               <p class="text-xs text-gray-400 mt-0.5">Valor unitário: R$ ${preco.toFixed(2).replace('.', ',')}</p>
               <div class="mt-1 flex flex-wrap gap-1.5 items-center">
-                ${item.com_prova 
-                  ? `<span class="inline-block text-[9px] bg-green-50 text-green-600 border border-green-150 rounded px-1.5 py-0.5 font-bold">Com Prova de Certificação</span>`
-                  : `<span class="inline-block text-[9px] bg-gray-50 text-gray-500 border border-gray-150 rounded px-1.5 py-0.5 font-bold">Sem Prova</span>`
+                ${item.combo_id
+                  ? `<span class="inline-block text-[9px] bg-secondary/10 text-secondary border border-secondary/30 rounded px-1.5 py-0.5 font-bold">Combo</span>`
+                  : (item.com_prova
+                      ? `<span class="inline-block text-[9px] bg-green-50 text-green-600 border border-green-150 rounded px-1.5 py-0.5 font-bold">Com Prova de Certificação</span>`
+                      : `<span class="inline-block text-[9px] bg-gray-50 text-gray-500 border border-gray-150 rounded px-1.5 py-0.5 font-bold">Sem Prova</span>`)
                 }
                 ${b2bHtml}
               </div>

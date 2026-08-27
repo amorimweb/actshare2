@@ -67,10 +67,42 @@
     </div>
   </div>
 
+  <!-- Vídeo explicativo -->
+  <div id="curso-video-bloco" class="hidden mb-10">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Vídeo Explicativo</h2>
+    <div class="aspect-video rounded-xl overflow-hidden bg-black">
+      <iframe id="curso-video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <!-- Diferencial -->
+  <div id="curso-diferencial-bloco" class="hidden mb-10">
+    <h2 class="text-xl font-bold text-gray-800 mb-3">Diferencial do Treinamento</h2>
+    <p id="curso-diferencial-texto" class="text-gray-600 whitespace-pre-line"></p>
+  </div>
+
   <!-- Módulos -->
   <div>
     <h2 class="text-xl font-bold text-gray-800 mb-4">Conteúdo do Curso</h2>
     <div id="modulos-list" class="space-y-3"></div>
+  </div>
+
+  <!-- Conteúdo programático -->
+  <div id="curso-conteudo-bloco" class="hidden mt-10">
+    <h2 class="text-xl font-bold text-gray-800 mb-3">Conteúdo Programático</h2>
+    <p id="curso-conteudo-texto" class="text-gray-600 whitespace-pre-line"></p>
+  </div>
+
+  <!-- Público alvo -->
+  <div id="curso-publico-alvo-bloco" class="hidden mt-10">
+    <h2 class="text-xl font-bold text-gray-800 mb-3">Público Alvo</h2>
+    <p id="curso-publico-alvo-texto" class="text-gray-600 whitespace-pre-line"></p>
+  </div>
+
+  <!-- Demais condições -->
+  <div id="curso-condicoes-bloco" class="hidden mt-10">
+    <h2 class="text-xl font-bold text-gray-800 mb-3">Demais Condições</h2>
+    <p id="curso-condicoes-texto" class="text-gray-600 whitespace-pre-line"></p>
   </div>
 </div>
 
@@ -98,14 +130,39 @@
     document.getElementById('curso-loading').classList.add('hidden');
     document.getElementById('curso-content').classList.remove('hidden');
 
-    document.getElementById('curso-titulo').textContent     = cursoData.titulo;
-    document.getElementById('curso-descricao').textContent  = cursoData.descricao || '';
+    // Toggles de visibilidade (0/vazio = oculto). Ausência do campo (cursos
+    // antigos sem a migration aplicada) é tratada como visível por padrão.
+    const visivel = (campo) => cursoData[campo] === undefined || cursoData[campo] == 1;
+
+    document.getElementById('curso-titulo').textContent     = visivel('vis_nome') ? cursoData.titulo : '';
+    document.getElementById('curso-descricao').textContent  = visivel('vis_breve_descricao') ? (cursoData.descricao || '') : '';
     document.getElementById('curso-categoria').textContent  = cursoData.categoria?.nome || '';
-    document.getElementById('curso-carga').innerHTML       += `${cursoData.carga_horaria_horas || 0}h de conteúdo`;
+    if (visivel('vis_carga_horaria')) document.getElementById('curso-carga').innerHTML += `${cursoData.carga_horaria_horas || 0}h de conteúdo`;
     document.getElementById('curso-instrutor').innerHTML   += cursoData.instrutor?.nome || '';
-    document.getElementById('curso-preco').textContent      = cursoData.preco > 0
+    document.getElementById('curso-preco').textContent      = !visivel('vis_valor') ? '' : (cursoData.preco > 0
       ? 'R$ ' + parseFloat(cursoData.preco).toFixed(2).replace('.', ',')
-      : 'Gratuito';
+      : 'Gratuito');
+
+    if (visivel('vis_video') && cursoData.video_url_explicativo) {
+      document.getElementById('curso-video-frame').src = cursoData.video_url_explicativo;
+      document.getElementById('curso-video-bloco').classList.remove('hidden');
+    }
+    if (visivel('vis_diferencial') && cursoData.diferencial) {
+      document.getElementById('curso-diferencial-texto').textContent = cursoData.diferencial;
+      document.getElementById('curso-diferencial-bloco').classList.remove('hidden');
+    }
+    if (visivel('vis_conteudo') && cursoData.conteudo_programatico) {
+      document.getElementById('curso-conteudo-texto').textContent = cursoData.conteudo_programatico;
+      document.getElementById('curso-conteudo-bloco').classList.remove('hidden');
+    }
+    if (visivel('vis_publico_alvo') && cursoData.publico_alvo) {
+      document.getElementById('curso-publico-alvo-texto').textContent = cursoData.publico_alvo;
+      document.getElementById('curso-publico-alvo-bloco').classList.remove('hidden');
+    }
+    if (visivel('vis_condicoes') && cursoData.condicoes) {
+      document.getElementById('curso-condicoes-texto').textContent = cursoData.condicoes;
+      document.getElementById('curso-condicoes-bloco').classList.remove('hidden');
+    }
 
     if (cursoData.preco > 0) {
       document.getElementById('btn-matricular').classList.add('hidden');

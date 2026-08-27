@@ -155,23 +155,13 @@ async function executarSequenciaPermissoes() {
   btn.disabled = true;
   btn.textContent = 'Processando...';
 
-  // A. Câmera
-  const camOk = await requestCamera();
-  if (!camOk) {
-    btn.disabled = false;
-    btn.textContent = 'Autorizar e Iniciar Avaliação';
-    return;
-  }
+  // A. Câmera e B. Compartilhamento de tela são OPCIONAIS — o escopo pede
+  // captura "somente se o usuário aceitar". Negar não bloqueia a prova, só
+  // fica registrado que a sessão não teve esse tipo de captura.
+  await requestCamera();
+  await requestScreenShare();
 
-  // B. Compartilhamento de Tela
-  const screenOk = await requestScreenShare();
-  if (!screenOk) {
-    btn.disabled = false;
-    btn.textContent = 'Autorizar e Iniciar Avaliação';
-    return;
-  }
-
-  // C. Tela Cheia
+  // C. Tela Cheia continua obrigatória (essa sim trava a prova se negada).
   const fsOk = await requestFullscreenMode();
   if (!fsOk) {
     btn.disabled = false;
@@ -206,9 +196,9 @@ async function requestCamera() {
 
     return true;
   } catch (err) {
-    statusEl.innerHTML = `✗ Negado`;
-    statusEl.className = 'font-bold text-red-500 flex items-center gap-1';
-    alert('Erro: A prova exige acesso à webcam. Por favor, libere a permissão nas configurações do navegador.');
+    statusEl.innerHTML = `— Não autorizado`;
+    statusEl.className = 'font-bold text-slate-400 flex items-center gap-1';
+    registrarInfracao('camera_nao_autorizada', 'Aluno optou por não autorizar a webcam.');
     return false;
   }
 }
@@ -232,9 +222,9 @@ async function requestScreenShare() {
 
     return true;
   } catch (err) {
-    statusEl.innerHTML = `✗ Negado`;
-    statusEl.className = 'font-bold text-red-500 flex items-center gap-1';
-    alert('Erro: A prova exige compartilhamento da sua tela inteira. Habilite o compartilhamento para continuar.');
+    statusEl.innerHTML = `— Não autorizado`;
+    statusEl.className = 'font-bold text-slate-400 flex items-center gap-1';
+    registrarInfracao('tela_nao_autorizada', 'Aluno optou por não autorizar o compartilhamento de tela.');
     return false;
   }
 }

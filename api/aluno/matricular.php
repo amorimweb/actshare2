@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/matriculas.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') methodNotAllowed();
 
@@ -13,6 +14,12 @@ $db   = getDB();
 $stmt = $db->prepare('SELECT id FROM matriculas WHERE aluno_id = ? AND curso_id = ? LIMIT 1');
 $stmt->execute([$user['id'], $cursoId]);
 if ($stmt->fetch()) jsonOk(['alreadyEnrolled' => true]);
+
+$pendentes = cursosPrerequisitosPendentes($db, $user['id'], $cursoId);
+if ($pendentes) {
+    $nomes = implode(', ', array_column($pendentes, 'titulo'));
+    jsonError("Você precisa concluir antes: $nomes.", 400);
+}
 
 $stmt = $db->prepare('INSERT INTO matriculas (aluno_id, curso_id, progresso_total, concluido) VALUES (?, ?, 0, 0)');
 $stmt->execute([$user['id'], $cursoId]);

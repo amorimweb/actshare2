@@ -214,8 +214,8 @@ require __DIR__ . '/layout/header.php';
 <script>
   const CANDIDATE_IP = '<?= $_SERVER['REMOTE_ADDR'] ?>';
 </script>
-<script src="<?= BASE_PATH ?>/assets/js/proctoring.js?v=2"></script>
-<script src="<?= BASE_PATH ?>/assets/js/quiz.js?v=2"></script>
+<script src="<?= BASE_PATH ?>/assets/js/proctoring.js?v=3"></script>
+<script src="<?= BASE_PATH ?>/assets/js/quiz.js?v=3"></script>
 <script src="<?= BASE_PATH ?>/assets/js/player.js?v=3"></script>
 <script>
   const cursoId = <?= (int)($_GET['id'] ?? 0) ?>;

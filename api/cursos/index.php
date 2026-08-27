@@ -51,10 +51,19 @@ if ($method === 'POST') {
         INSERT INTO cursos (titulo, nome_certificado, codigo, descricao, thumb_url, ativo, publico, categoria_id, instrutor_id, preco, carga_horaria_horas, prazo_acesso_dias, disponivel_loja, certificado_template_url, certificado_config, certificado_liberacao, exibir_instrutor)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ');
+    // Todo curso precisa de um código: o certificado usa [CODIGO]-[ID] como
+    // código de autenticidade, e sem ele a validação pública nunca encontra
+    // o certificado. Se o admin não informar um, gera um a partir do próximo id.
+    $codigo = trim($body['codigo'] ?? '') ?: null;
+    if (!$codigo) {
+        $proximoId = (int)$db->query('SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = "cursos"')->fetchColumn();
+        $codigo = 'C' . str_pad((string)$proximoId, 6, '0', STR_PAD_LEFT);
+    }
+
     $stmt->execute([
         $body['titulo']                  ?? '',
         $body['nome_certificado']        ?? null,
-        $body['codigo']                  ?? null,
+        $codigo,
         $body['descricao']               ?? null,
         $body['thumb_url']               ?? null,
         $body['ativo']                   ?? 1,

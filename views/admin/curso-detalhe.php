@@ -105,6 +105,19 @@
         </div>
       </div>
 
+      <label class="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+        <input type="checkbox" id="aula-publica" class="rounded accent-primary">
+        Aula Livre — pode ser assistida por qualquer pessoa, sem matrícula no curso
+      </label>
+
+      <div id="bloco-materiais" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+        <h4 class="font-bold text-xs text-slate-700">Materiais para Download (até 5MB cada)</h4>
+        <div id="materiais-lista" class="space-y-1 text-xs"></div>
+        <input type="file" id="material-arquivo" class="w-full text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
+        <button type="button" onclick="enviarMaterialAula()" class="text-xs bg-slate-700 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800">+ Adicionar Material</button>
+        <div id="material-erro" class="hidden text-red-600 text-[11px]"></div>
+      </div>
+
       <!-- Configurações de Quizz e Avaliação -->
       <div id="bloco-quiz-config" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-3">
         <h4 class="font-bold text-xs text-slate-700">Parâmetros do Questionário</h4>
@@ -234,6 +247,67 @@
         </label>
       </div>
 
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Pré-requisitos (cursos que precisam ser concluídos antes deste)</label>
+        <select id="ec-prerequisitos" multiple size="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"></select>
+        <p class="text-[10px] text-slate-400 mt-0.5">Ctrl/Cmd + clique para selecionar mais de um.</p>
+      </div>
+
+      <div class="border-t border-slate-100 pt-4">
+        <h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Descrição da página do curso (loja)</h3>
+        <p class="text-[10px] text-slate-400 mb-3">Cada caixa tem um toggle "Visível" — controla se aquele bloco aparece na página pública do curso.</p>
+
+        <div class="space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-gray-700 uppercase">Vídeo Explicativo (URL embed)</label>
+              <label class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-600"><input type="checkbox" id="ec-vis-video" class="rounded accent-primary"> Visível</label>
+            </div>
+            <input type="url" id="ec-video-explicativo" placeholder="https://..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-gray-700 uppercase">Diferencial do Treinamento</label>
+              <label class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-600"><input type="checkbox" id="ec-vis-diferencial" class="rounded accent-primary"> Visível</label>
+            </div>
+            <textarea id="ec-diferencial" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-gray-700 uppercase">Conteúdo Programático</label>
+              <label class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-600"><input type="checkbox" id="ec-vis-conteudo" class="rounded accent-primary"> Visível</label>
+            </div>
+            <textarea id="ec-conteudo" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-gray-700 uppercase">Público Alvo</label>
+              <label class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-600"><input type="checkbox" id="ec-vis-publico-alvo" class="rounded accent-primary"> Visível</label>
+            </div>
+            <textarea id="ec-publico-alvo" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-gray-700 uppercase">Demais Condições (material, certificados etc.)</label>
+              <label class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-600"><input type="checkbox" id="ec-vis-condicoes" class="rounded accent-primary"> Visível</label>
+            </div>
+            <textarea id="ec-condicoes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-3 rounded-lg">
+            <label class="flex items-center gap-2 text-[11px] font-semibold text-gray-700"><input type="checkbox" id="ec-vis-nome" class="rounded accent-primary"> Nome do curso visível</label>
+            <label class="flex items-center gap-2 text-[11px] font-semibold text-gray-700"><input type="checkbox" id="ec-vis-breve-descricao" class="rounded accent-primary"> Breve descrição visível</label>
+            <label class="flex items-center gap-2 text-[11px] font-semibold text-gray-700"><input type="checkbox" id="ec-vis-carga-horaria" class="rounded accent-primary"> Carga horária visível</label>
+            <label class="flex items-center gap-2 text-[11px] font-semibold text-gray-700"><input type="checkbox" id="ec-vis-valor" class="rounded accent-primary"> Valor visível</label>
+            <label class="flex items-center gap-2 text-[11px] font-semibold text-gray-700"><input type="checkbox" id="ec-vis-descricao" class="rounded accent-primary"> Descrição visível</label>
+          </div>
+        </div>
+      </div>
+
       <div id="ec-form-erro" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2"></div>
       
       <div class="flex gap-3 pt-2">
@@ -244,7 +318,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=4"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=5"></script>
 <script>
   const cursoAdminId = <?= (int)($_GET['id'] ?? 0) ?>;
   document.addEventListener('DOMContentLoaded', () => carregarCursoAdmin(cursoAdminId));

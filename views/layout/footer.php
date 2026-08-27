@@ -45,8 +45,8 @@
     </div>
 
     <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500 space-y-1">
-      <p><strong class="text-gray-300">© 2020. ACTSHARE – SOLUTIONS FOR MANAGEMENT</strong> – Todos os direitos reservados.</p>
-      <p>Desenvolvido por <strong class="text-gray-300">Digital Bees.</strong> Mantido por <em>eduasp@gmail.com</em></p>
+      <p><strong class="text-gray-300">© <?= date('Y') ?>. ACTSHARE – SOLUTIONS FOR MANAGEMENT</strong> – Todos os direitos reservados.</p>
+      <p>Desenvolvido por <strong class="text-gray-300">ActShare</strong></p>
     </div>
   </div>
 </footer>

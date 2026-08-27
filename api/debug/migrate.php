@@ -1,5 +1,10 @@
 <?php
 require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/response.php';
+require_once __DIR__ . '/../../includes/auth.php';
+
+requireAdmin();
+
 try {
     $db = getDB();
     // Try to describe to check if column already exists

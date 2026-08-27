@@ -16,6 +16,36 @@ async function fetchCategorias() {
   return _categorias;
 }
 
+let _combos = null;
+async function fetchCombos() {
+  if (_combos) return _combos;
+  _combos = await apiFetch(_B() + '/api/combos?ativo=true&publico=true');
+  return _combos;
+}
+
+function renderCardCombo(combo) {
+  const qtdCursos = (combo.cursos || []).length;
+  return `
+    <a href="${_B()}/combos/${combo.id}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+      ${combo.thumb_url
+        ? `<img src="${combo.thumb_url}" alt="${esc(combo.titulo)}" class="w-full h-40 object-cover">`
+        : `<div class="w-full h-40 bg-gradient-to-br from-secondary to-emerald-700 flex items-center justify-center">
+             <svg class="w-12 h-12 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+           </div>`
+      }
+      <div class="p-4 flex flex-col flex-1">
+        <span class="text-xs text-secondary font-medium mb-1">Combo · ${qtdCursos} cursos</span>
+        <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2">${esc(combo.titulo)}</h3>
+        ${combo.descricao ? `<p class="text-xs text-gray-500 line-clamp-2 mb-3">${esc(combo.descricao)}</p>` : ''}
+        <div class="mt-auto flex items-center justify-between text-xs text-gray-400">
+          <span>${qtdCursos} treinamentos</span>
+          <span class="font-semibold text-primary">R$ ${parseFloat(combo.preco).toFixed(2).replace('.', ',')}</span>
+        </div>
+      </div>
+    </a>
+  `;
+}
+
 function renderCardCurso(curso) {
   return `
     <a href="${_B()}/cursos/${curso.id}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
@@ -86,6 +116,21 @@ async function carregarSidebarCategorias() {
   } catch {}
 }
 
+let _grupoProdutoAtivo = 'treinamentos';
+let _livrePagoAtivo = 'todos';
+
+function mudarGrupoProduto(grupo) {
+  _grupoProdutoAtivo = grupo;
+  const wrap = document.getElementById('filtro-livre-pago-wrap');
+  if (wrap) wrap.classList.toggle('hidden', grupo === 'combos'); // combos não têm modalidade livre/paga
+  renderizarCursos(_categoriaAtiva);
+}
+
+function filtrarLivrePago(valor) {
+  _livrePagoAtivo = valor;
+  renderizarCursos(_categoriaAtiva);
+}
+
 async function renderizarCursos(categoriaId) {
   _categoriaAtiva = categoriaId;
   const grid  = document.getElementById('cursos-grid');
@@ -94,31 +139,57 @@ async function renderizarCursos(categoriaId) {
 
   grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-400"><div class="inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>';
 
+  const searchInput = document.getElementById('course-search-input');
+  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : new URLSearchParams(window.location.search).get('busca')?.toLowerCase() || '';
+  if (searchVal && searchInput && !searchInput.value) {
+    searchInput.value = searchVal;
+  }
+
+  if (_grupoProdutoAtivo === 'combos') {
+    try {
+      _combos = null;
+      let combos = await fetchCombos();
+      if (searchVal) {
+        combos = combos.filter(c => c.titulo.toLowerCase().includes(searchVal) || (c.descricao && c.descricao.toLowerCase().includes(searchVal)));
+      }
+      if (!combos.length) {
+        grid.innerHTML = '';
+        empty?.classList.remove('hidden');
+        empty.textContent = 'Nenhum combo encontrado.';
+        return;
+      }
+      empty?.classList.add('hidden');
+      grid.innerHTML = combos.map(renderCardCombo).join('');
+    } catch {
+      grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Erro ao carregar combos.</p>';
+    }
+    return;
+  }
+
   try {
     const params = { ativo: 'true', publico: 'true' };
     if (categoriaId) params.categoria = categoriaId;
     _cursos = null;
     const cursos = await fetchCursos(params);
 
-    const searchInput = document.getElementById('course-search-input');
-    const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : new URLSearchParams(window.location.search).get('busca')?.toLowerCase() || '';
-
-    if (searchVal && searchInput && !searchInput.value) {
-      searchInput.value = searchVal;
-    }
-
     let filtered = cursos;
     if (searchVal) {
-      filtered = cursos.filter(c => 
-        c.titulo.toLowerCase().includes(searchVal) || 
+      filtered = filtered.filter(c =>
+        c.titulo.toLowerCase().includes(searchVal) ||
         (c.descricao && c.descricao.toLowerCase().includes(searchVal)) ||
         (c.codigo && c.codigo.toLowerCase().includes(searchVal))
       );
+    }
+    if (_livrePagoAtivo === 'livre') {
+      filtered = filtered.filter(c => parseFloat(c.preco) === 0);
+    } else if (_livrePagoAtivo === 'pago') {
+      filtered = filtered.filter(c => parseFloat(c.preco) > 0);
     }
 
     if (!filtered.length) {
       grid.innerHTML = '';
       empty?.classList.remove('hidden');
+      empty.textContent = 'Nenhum curso encontrado.';
       return;
     }
     empty?.classList.add('hidden');

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/matriculas.php';
 
 $user = requireAuth();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -82,40 +83,12 @@ if ($method === 'POST') {
             $stmtIns->execute([$matriculaId, $p['id'], (int)$respostas[$p['id']]]);
         }
 
-        // Marca a matrícula como concluída se todas as aulas foram concluídas
-        // Vamos calcular o progresso real e atualizar a matrícula
-        $stmtAulas = $db->prepare('
-            SELECT COUNT(*) AS total 
-            FROM aulas a
-            JOIN modulos m ON a.modulo_id = m.id
-            WHERE m.curso_id = ?
-        ');
-        $stmtAulas->execute([$matricula['curso_id']]);
-        $totalAulas = (int)$stmtAulas->fetch()['total'];
-
-        $stmtProg = $db->prepare('
-            SELECT COUNT(*) AS concluidas 
-            FROM progresso_aula 
-            WHERE matricula_id = ? AND concluida = 1
-        ');
-        $stmtProg->execute([$matriculaId]);
-        $concluidas = (int)$stmtProg->fetch()['concluidas'];
-
-        $percentual = $totalAulas > 0 ? (int)round(($concluidas / $totalAulas) * 100) : 100;
-        if ($percentual > 100) $percentual = 100;
-
-        $concluido = ($percentual >= 100) ? 1 : 0;
-        $dataConclusao = $concluido ? date('Y-m-d H:i:s') : null;
-
-        $stmtUpdateMat = $db->prepare('
-            UPDATE matriculas
-            SET progresso_total = ?, concluido = ?, data_conclusao = COALESCE(data_conclusao, ?)
-            WHERE id = ?
-        ');
-        $stmtUpdateMat->execute([$percentual, $concluido, $dataConclusao, $matriculaId]);
+        // Recalcula a conclusão: agora que a pesquisa foi respondida, se as
+        // aulas já estavam 100%, é aqui que concluido vira 1 de fato.
+        $status = recalcularConclusaoMatricula($db, $matriculaId);
 
         $db->commit();
-        jsonOk(['success' => true]);
+        jsonOk(['success' => true] + $status);
     } catch (Exception $e) {
         $db->rollBack();
         jsonError($e->getMessage(), 500);
