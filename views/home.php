@@ -5,10 +5,34 @@ $showCourseNav = true;
 <?php require __DIR__ . '/layout/header.php'; ?>
 
 <!-- Hero -->
-<section class="relative min-h-[520px] overflow-hidden text-white">
-  <video class="absolute inset-0 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata">
-    <source src="<?= BASE_PATH ?>/assets/img/herovideo.mp4" type="video/mp4">
-  </video>
+<section class="relative min-h-[520px] overflow-hidden text-white bg-primary">
+  <!--
+    O fundo bg-primary acima já pinta a cor certa na hora, sem esperar nada
+    baixar. O <video> nasce sem <source> — só ganha uma via JS logo abaixo,
+    e só em telas médias/grandes com conexão razoável — porque um
+    <video preload> com display:none ainda assim baixa os bytes (o CSS não
+    impede o carregamento de mídia), então "esconder por CSS" sozinho não
+    economizava nada no mobile, que é onde a demora mais pesa.
+  -->
+  <video id="hero-video" class="absolute inset-0 hidden h-full w-full object-cover md:block"
+    muted loop playsinline poster="<?= BASE_PATH ?>/assets/img/herovideo-poster.jpg?v=2"></video>
+  <script>
+    (function () {
+      var video = document.getElementById('hero-video');
+      var isWideEnough = window.matchMedia('(min-width: 768px)').matches;
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var saveData = navigator.connection && navigator.connection.saveData;
+      if (!video || !isWideEnough || prefersReducedMotion || saveData) return;
+
+      var source = document.createElement('source');
+      source.src = '<?= BASE_PATH ?>/assets/img/herovideo.mp4?v=2';
+      source.type = 'video/mp4';
+      video.autoplay = true; // engata a política nativa de autoplay (mais tolerante que só chamar .play())
+      video.appendChild(source);
+      video.load();
+      video.addEventListener('canplay', function () { video.play().catch(function () {}); }, { once: true });
+    })();
+  </script>
   <div class="absolute inset-0 bg-gradient-to-r from-primary/85 via-primary/45 to-black/55"></div>
 
   <div class="relative z-10 mx-auto flex min-h-[520px] max-w-7xl items-center justify-start px-4 sm:px-6 lg:px-8">

@@ -1,4 +1,16 @@
 ﻿Options -Indexes
+
+# Cache de assets estáticos no navegador — sem isso, o vídeo do hero (e
+# imagens/css/js) é rebaixado do zero a cada visita/navegação de página.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(mp4|webm|ogg|jpg|jpeg|png|webp|gif|svg|ico|woff|woff2)$">
+    Header set Cache-Control "public, max-age=2592000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+</IfModule>
+
 RewriteEngine On
 
 # Redireciona API para api/router.php
