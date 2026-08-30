@@ -112,7 +112,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=10"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarUsuariosAdmin);
 </script>

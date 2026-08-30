@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/email_templates.php';
 
 $gestor = requireMasterOrAdmin();
 $cursoId = (int)($GLOBALS['_ROUTE']['id'] ?? 0);
@@ -34,18 +35,11 @@ $total = count($alunos);
 $enviados = 0;
 
 foreach ($alunos as $aluno) {
-    $assunto = 'Seu treinamento já está disponível: ' . $aluno['curso_titulo'];
-    $corpo = "Olá, " . $aluno['nome'] . "!\r\n\r\n"
-        . "O treinamento \"" . $aluno['curso_titulo'] . "\" já está disponível na plataforma ActShare.\r\n"
-        . "Acesse sua Área do Aluno para começar.\r\n\r\nEquipe ActShare";
-    $headers = "From: ActShare <no-reply@actshare.com.br>\r\nContent-Type: text/plain; charset=UTF-8";
-
-    // Usa o mail() nativo do PHP — depende de SMTP configurado no servidor de
-    // produção (igual à integração ASAAS: funciona de verdade assim que o
-    // ambiente tiver um transporte de e-mail configurado).
-    if (@mail($aluno['email'], $assunto, $corpo, $headers)) {
-        $enviados++;
-    }
+    $ok = enviarEmailTemplate($db, 'curso_disponivel', $aluno['email'], [
+        'nome' => $aluno['nome'],
+        'curso' => $aluno['curso_titulo'],
+    ]);
+    if ($ok) $enviados++;
 }
 
 jsonOk(['enviados' => $enviados, 'total' => $total]);

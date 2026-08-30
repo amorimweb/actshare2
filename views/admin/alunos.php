@@ -29,6 +29,7 @@
           <th class="px-4 py-3 font-medium text-gray-600">Início</th>
           <th class="px-4 py-3 font-medium text-gray-600">Término</th>
           <th class="px-4 py-3 font-medium text-gray-600">Certificado</th>
+          <th class="px-4 py-3 font-medium text-gray-600">Provas</th>
         </tr>
       </thead>
       <tbody id="alunos-admin-tbody" class="divide-y divide-gray-100">
@@ -38,7 +39,18 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
+<!-- Modal Provas -->
+<div id="modal-provas-aluno" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-800">Provas do Aluno</h2>
+      <button onclick="document.getElementById('modal-provas-aluno').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="provas-aluno-lista" class="space-y-3 text-sm">Carregando...</div>
+  </div>
+</div>
+
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=10"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarAlunosAdmin);
 </script>

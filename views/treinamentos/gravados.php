@@ -13,7 +13,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=5"></script>
+<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=6"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     carregarCursosDestaque('gravados-grid', 12);

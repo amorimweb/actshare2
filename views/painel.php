@@ -108,7 +108,7 @@
   </section>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/painel.js?v=3"></script>
+<script src="<?= BASE_PATH ?>/assets/js/painel.js?v=4"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const user = authGetUser();

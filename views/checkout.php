@@ -145,7 +145,7 @@ require __DIR__ . '/layout/header.php';
             <span id="resumo-subtotal" class="font-medium text-gray-800">R$ 0,00</span>
           </div>
           <div class="flex justify-between text-secondary hidden" id="resumo-desc-prog-block">
-            <span>Desconto Progressivo B2B</span>
+            <span>Desconto Progressivo</span>
             <span id="resumo-desc-prog">- R$ 0,00</span>
           </div>
           <div class="flex justify-between text-secondary hidden" id="resumo-desc-fidelidade-block">
@@ -188,10 +188,20 @@ require __DIR__ . '/layout/header.php';
   let formaPagamento = 'pix'; // 'pix', 'boleto', 'cartao'
   let userLogged = null;
   let totalLiquidoGlobal = 0.00;
+  let faixasDesconto = [];
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    try { faixasDesconto = await apiFetch(BASE + '/api/configuracoes/desconto-progressivo'); } catch { faixasDesconto = []; }
     verificarAutenticacao();
   });
+
+  function percentualProgressivo(vagas) {
+    for (let i = faixasDesconto.length - 1; i >= 0; i--) {
+      const f = faixasDesconto[i];
+      if (vagas >= f.min && (f.max === null || vagas <= f.max)) return f.percentual;
+    }
+    return 0;
+  }
 
   function verificarAutenticacao() {
     userLogged = authGetUser();
@@ -255,12 +265,7 @@ require __DIR__ . '/layout/header.php';
       const subtotalItem = preco * item.vagas;
       subtotalBruto += subtotalItem;
       
-      // Cálculo progressivo B2B
-      let pct = 0;
-      if (item.vagas >= 2 && item.vagas <= 5) pct = 5;
-      else if (item.vagas >= 6 && item.vagas <= 10) pct = 10;
-      else if (item.vagas > 10) pct = 15;
-      
+      const pct = percentualProgressivo(item.vagas);
       if (pct > 0) {
         descontoProg += subtotalItem * (pct / 100);
       }

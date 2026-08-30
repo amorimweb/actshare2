@@ -29,8 +29,38 @@
       </div>
       <button onclick="salvarExamesCurso()" class="text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-blue-900">Salvar Exames</button>
     </div>
-    <div id="exames-curso-list" class="grid sm:grid-cols-3 gap-4"></div>
+    <div id="exames-curso-list" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
   </div>
+
+  <!-- Modal Banco de Questões do Exame -->
+  <div id="modal-exame-perguntas" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="exame-perguntas-titulo" class="text-lg font-bold text-gray-800">Banco de Questões</h2>
+        <button onclick="document.getElementById('modal-exame-perguntas').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+
+      <form id="exame-nova-pergunta-form" class="space-y-3 border border-gray-200 rounded-xl p-4 mb-5">
+        <h3 class="text-xs font-bold text-gray-500 uppercase">Nova Pergunta</h3>
+        <textarea id="exame-pergunta-texto" required rows="2" placeholder="Texto da pergunta..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        <textarea id="exame-pergunta-justificativa" rows="2" placeholder="Justificativa (opcional)..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+
+        <div id="exame-alternativas-container" class="space-y-2"></div>
+        <button type="button" onclick="adicionarAlternativaExame()" class="text-xs text-primary font-semibold hover:underline">+ Adicionar alternativa</button>
+
+        <div id="exame-pergunta-erro" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2"></div>
+        <button type="submit" class="w-full bg-primary text-white text-sm font-medium py-2 rounded-lg">Adicionar Pergunta</button>
+      </form>
+
+      <div id="exame-perguntas-lista" class="space-y-2"></div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      adicionarAlternativaExame();
+      adicionarAlternativaExame();
+    });
+  </script>
 
   <!-- Módulos e aulas -->
   <div class="bg-white rounded-xl border border-gray-200 p-6">
@@ -330,7 +360,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=10"></script>
 <script>
   const cursoAdminId = <?= (int)($_GET['id'] ?? 0) ?>;
   document.addEventListener('DOMContentLoaded', () => carregarCursoAdmin(cursoAdminId));

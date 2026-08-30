@@ -16,7 +16,8 @@ $stmt = $db->query('
         u.nome AS aluno_nome, u.email AS aluno_email,
         c.titulo AS curso_titulo,
         gestorU.nome AS cliente_nome, gestorU.razao_social AS cliente_razao_social,
-        (SELECT qr.aprovado FROM quiz_resposta qr JOIN aulas a ON qr.aula_id = a.id WHERE qr.matricula_id = m.id AND a.e_prova = 1 LIMIT 1) AS exam_aprovado
+        (SELECT qr.aprovado FROM quiz_resposta qr JOIN aulas a ON qr.aula_id = a.id WHERE qr.matricula_id = m.id AND a.e_prova = 1 LIMIT 1) AS exam_aprovado,
+        (SELECT COUNT(*) FROM exame_tentativas et WHERE et.matricula_id = m.id) AS provas_realizadas
     FROM matriculas m
     JOIN usuarios u ON u.id = m.aluno_id
     JOIN cursos c ON c.id = m.curso_id

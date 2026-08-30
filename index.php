@@ -36,6 +36,10 @@ $routes = [
     'admin/pedidos'                 => 'admin/pedidos',
     'admin/clientes'                => 'admin/clientes',
     'admin/alunos'                  => 'admin/alunos',
+    'explicacao-exames'             => 'explicacao-exames',
+    'admin/exames'                  => 'admin/exames',
+    'admin/desconto-progressivo'    => 'admin/desconto-progressivo',
+    'admin/email-templates'         => 'admin/email-templates',
     'admin/perguntas'               => 'admin/perguntas',
     'admin/cupons'                  => 'admin/cupons',
     'admin/combos'                  => 'admin/combos',
@@ -49,6 +53,7 @@ $dynamicRoutes = [
     '#^cursos/(\d+)$#'       => ['view' => 'curso-detalhe',   'param' => 'id'],
     '#^combos/(\d+)$#'       => ['view' => 'combo-detalhe',   'param' => 'id'],
     '#^painel/curso/(\d+)$#' => ['view' => 'painel-curso',    'param' => 'id'],
+    '#^painel/exame/(\d+)$#' => ['view' => 'painel-exame',    'param' => 'id'],
     '#^admin/cursos/(\d+)$#' => ['view' => 'admin/curso-detalhe', 'param' => 'id'],
     '#^gestor/curso/(\d+)$#' => ['view' => 'gestor/curso-detalhe', 'param' => 'id'],
 ];

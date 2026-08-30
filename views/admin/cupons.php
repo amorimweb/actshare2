@@ -23,7 +23,7 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
     <div class="space-y-3">
-      <p class="text-[11px] font-bold text-slate-500 uppercase">Cupom por Indicação (BtoC)</p>
+      <p class="text-[11px] font-bold text-slate-500 uppercase">Cupom por Indicação</p>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-[10px] text-slate-500 mb-0.5">Desconto para indicado (%)</label>
@@ -34,34 +34,15 @@
           <input type="number" id="cfg-cupom-indicacao-validade-dias" min="1" class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm">
         </div>
       </div>
+    </div>
 
-      <p class="text-[11px] font-bold text-slate-500 uppercase pt-2">Fidelidade</p>
+    <div class="space-y-3">
+      <p class="text-[11px] font-bold text-slate-500 uppercase">Fidelidade</p>
       <div>
         <label class="block text-[10px] text-slate-500 mb-0.5">Desconto p/ ex-aluno com curso concluído (%)</label>
         <input type="number" id="cfg-desconto-fidelidade-percentual" min="0" max="100" class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm">
       </div>
-    </div>
-
-    <div class="space-y-2">
-      <p class="text-[11px] font-bold text-slate-500 uppercase">Desconto Progressivo por Volume (vagas B2B)</p>
-      <div class="grid grid-cols-3 gap-2 items-end">
-        <span class="text-[10px] text-slate-400 col-span-3">Faixa 1 (de / até vagas / % desconto)</span>
-        <input type="number" id="cfg-desconto-progressivo-faixa1-min" min="1" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-        <input type="number" id="cfg-desconto-progressivo-faixa1-max" min="1" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-        <input type="number" id="cfg-desconto-progressivo-faixa1-percentual" min="0" max="100" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-      </div>
-      <div class="grid grid-cols-3 gap-2 items-end">
-        <span class="text-[10px] text-slate-400 col-span-3">Faixa 2</span>
-        <input type="number" id="cfg-desconto-progressivo-faixa2-min" min="1" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-        <input type="number" id="cfg-desconto-progressivo-faixa2-max" min="1" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-        <input type="number" id="cfg-desconto-progressivo-faixa2-percentual" min="0" max="100" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-      </div>
-      <div class="grid grid-cols-3 gap-2 items-end">
-        <span class="text-[10px] text-slate-400 col-span-3">Faixa 3 (acima de)</span>
-        <input type="number" id="cfg-desconto-progressivo-faixa3-min" min="1" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-        <div></div>
-        <input type="number" id="cfg-desconto-progressivo-faixa3-percentual" min="0" max="100" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs">
-      </div>
+      <p class="text-[11px] text-slate-400 pt-1">As faixas de Desconto Progressivo por volume de vagas foram para uma tela própria: <a href="<?= BASE_PATH ?>/admin/desconto-progressivo" class="text-primary font-semibold hover:underline">Desconto Progressivo</a>.</p>
     </div>
   </div>
   <div id="config-msg" class="hidden mt-3 text-xs rounded-lg px-3 py-2"></div>

@@ -14,7 +14,7 @@
       <h1 id="curso-titulo" class="text-3xl font-bold text-gray-800 mb-4"></h1>
       <p id="curso-descricao" class="text-gray-600 mb-6"></p>
       <div class="flex flex-wrap gap-4 text-sm text-gray-500">
-        <span id="curso-carga" class="flex items-center gap-1">
+        <span id="curso-carga" class="flex items-center gap-1 font-bold text-gray-800">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </span>
         <span id="curso-instrutor" class="flex items-center gap-1">
@@ -28,9 +28,12 @@
       <img id="curso-thumb" src="" alt="" class="w-full rounded-lg mb-4 hidden">
       <div id="curso-preco" class="text-3xl font-bold text-primary mb-4"></div>
       
-      <!-- Exame Exemplar Global (opcional, pode marcar mais de um) -->
+      <!-- Avaliação / Exame Exemplar Global (opcional, pode marcar mais de um) -->
       <div id="opcoes-prova-container" class="hidden space-y-2 mb-6 border-t border-gray-150 pt-4">
-        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Exame Exemplar Global (opcional)</span>
+        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">
+          Avaliação / Exame Exemplar Global (opcional)
+          <a href="<?= BASE_PATH ?>/explicacao-exames" target="_blank" class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-gray-500 hover:bg-primary hover:text-white transition-colors normal-case font-bold ml-0.5" title="O que é isso?">?</a>
+        </span>
         <div id="exames-opcoes-list" class="space-y-2"></div>
       </div>
 
@@ -194,7 +197,7 @@
     el.classList.toggle('hidden');
   }
 
-  const EXAME_LABEL = { QM: 'Exame Exemplar Global QM', AU: 'Exame Exemplar Global AU', TL: 'Exame Exemplar Global TL' };
+  const EXAME_LABEL = { AVALIACAO: 'Avaliação', QM: 'Exame Exemplar Global QM', AU: 'Exame Exemplar Global AU', TL: 'Exame Exemplar Global TL' };
 
   function renderExamesOpcoes() {
     const container = document.getElementById('opcoes-prova-container');

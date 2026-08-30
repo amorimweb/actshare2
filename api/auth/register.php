@@ -56,4 +56,10 @@ $user = $stmt->fetch();
 $token = signToken($user);
 setAuthCookie($token);
 
+require_once __DIR__ . '/../../includes/email_templates.php';
+enviarEmailTemplate($db, 'conta_criada', $user['email'], [
+    'nome' => $user['nome'],
+    'link_site' => SITE_URL,
+]);
+
 jsonOk(['success' => true, 'user' => $user], 201);

@@ -109,13 +109,13 @@
 
       // Verifica restrição de liberação corporativa
       if (data.bloqueado_empresa && user.role !== 'admin' && user.role !== 'gestor') {
-        mostrarErro("Acesso Restrito", "Este certificado está configurado para liberação somente à empresa contratante. Por favor, solicite-o ao seu gestor.");
+        mostrarErro("Acesso Restrito", "Solicite o seu Certificado de Conclusão junto ao seu Gestor na organização.");
         return;
       }
 
       // Regra de Liberação do Curso: Somente Empresa
       if (data.curso.certificado_liberacao === 'empresa' && user.role !== 'admin' && user.role !== 'gestor') {
-        mostrarErro("Acesso Restrito", "Este certificado está configurado para liberação somente à empresa contratante. Por favor, solicite-o ao seu gestor.");
+        mostrarErro("Acesso Restrito", "Solicite o seu Certificado de Conclusão junto ao seu Gestor na organização.");
         return;
       }
 

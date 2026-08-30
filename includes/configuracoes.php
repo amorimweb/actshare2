@@ -17,7 +17,22 @@ function getConfiguracoes(PDO $db): array {
         'desconto_progressivo_faixa2_max'        => 10,
         'desconto_progressivo_faixa2_percentual' => 10,
         'desconto_progressivo_faixa3_min'        => 11,
-        'desconto_progressivo_faixa3_percentual' => 15,
+        'desconto_progressivo_faixa3_max'        => 20,
+        'desconto_progressivo_faixa3_percentual' => 10,
+        'desconto_progressivo_faixa4_min'        => 21,
+        'desconto_progressivo_faixa4_max'        => 30,
+        'desconto_progressivo_faixa4_percentual' => 15,
+        'desconto_progressivo_faixa5_min'        => 31,
+        'desconto_progressivo_faixa5_max'        => 40,
+        'desconto_progressivo_faixa5_percentual' => 20,
+        'desconto_progressivo_faixa6_min'        => 41,
+        'desconto_progressivo_faixa6_max'        => 70,
+        'desconto_progressivo_faixa6_percentual' => 25,
+        'desconto_progressivo_faixa7_min'        => 71,
+        'desconto_progressivo_faixa7_max'        => 100,
+        'desconto_progressivo_faixa7_percentual' => 30,
+        'desconto_progressivo_faixa8_min'        => 101,
+        'desconto_progressivo_faixa8_percentual' => 40,
     ];
 
     $stmt = $db->query('SELECT chave, valor FROM configuracoes');
@@ -28,14 +43,29 @@ function getConfiguracoes(PDO $db): array {
 }
 
 function getDescontoProgressivoPercentual(array $config, int $vagas): float {
-    if ($vagas >= $config['desconto_progressivo_faixa3_min']) {
-        return (float)$config['desconto_progressivo_faixa3_percentual'];
-    }
-    if ($vagas >= $config['desconto_progressivo_faixa2_min'] && $vagas <= $config['desconto_progressivo_faixa2_max']) {
-        return (float)$config['desconto_progressivo_faixa2_percentual'];
-    }
-    if ($vagas >= $config['desconto_progressivo_faixa1_min'] && $vagas <= $config['desconto_progressivo_faixa1_max']) {
-        return (float)$config['desconto_progressivo_faixa1_percentual'];
+    // Percorre da faixa mais alta pra mais baixa; a última faixa (8) não tem
+    // "max" — é "acima de X".
+    for ($faixa = 8; $faixa >= 1; $faixa--) {
+        $min = $config["desconto_progressivo_faixa{$faixa}_min"] ?? null;
+        if ($min === null) continue;
+        $max = $config["desconto_progressivo_faixa{$faixa}_max"] ?? null;
+        if ($vagas >= $min && ($max === null || $vagas <= $max)) {
+            return (float)$config["desconto_progressivo_faixa{$faixa}_percentual"];
+        }
     }
     return 0.0;
+}
+
+/** Lista as 8 faixas configuradas, em ordem, pra exibir no Admin. */
+function getFaixasDescontoProgressivo(array $config): array {
+    $faixas = [];
+    for ($i = 1; $i <= 8; $i++) {
+        $faixas[] = [
+            'faixa'       => $i,
+            'min'         => (int)($config["desconto_progressivo_faixa{$i}_min"] ?? 0),
+            'max'         => isset($config["desconto_progressivo_faixa{$i}_max"]) ? (int)$config["desconto_progressivo_faixa{$i}_max"] : null,
+            'percentual'  => (float)($config["desconto_progressivo_faixa{$i}_percentual"] ?? 0),
+        ];
+    }
+    return $faixas;
 }

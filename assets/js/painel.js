@@ -258,7 +258,7 @@ function renderizarPainel() {
             ${btnText}
           </a>
           ${parseInt(m.com_prova) === 1 && window._abaAtiva !== 'certificados'
-            ? `<a href="${_B()}/painel/curso/${m.curso_id}" class="w-full block text-center bg-primary hover:bg-blue-900 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-lg transition-all hover:shadow-md">Exame</a>`
+            ? `<a href="${_B()}/painel/exame/${m.curso_id}" class="w-full block text-center bg-primary hover:bg-blue-900 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-lg transition-all hover:shadow-md">Exame</a>`
             : ''
           }
         </div>

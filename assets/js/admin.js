@@ -618,8 +618,8 @@ async function carregarCursoAdmin(id) {
   }
 }
 
-// ============ EXAME EXEMPLAR GLOBAL (QM/AU/TL) ============
-const EXAME_TIPO_LABEL = { QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
+// ============ AVALIAÇÃO / EXAME EXEMPLAR GLOBAL (AVALIACAO/QM/AU/TL) ============
+const EXAME_TIPO_LABEL = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
 
 async function carregarExamesCurso(cursoId) {
   const el = document.getElementById('exames-curso-list');
@@ -627,34 +627,155 @@ async function carregarExamesCurso(cursoId) {
   try {
     const exames = await apiFetch(_B() + '/api/admin/cursos/' + cursoId + '/exames');
     el.innerHTML = exames.map(ex => `
-      <div class="border border-gray-200 rounded-xl p-4">
-        <label class="flex items-center gap-2 mb-3">
+      <div class="border border-gray-200 rounded-xl p-4 space-y-2">
+        <label class="flex items-center gap-2 mb-1">
           <input type="checkbox" id="exame-ativo-${ex.tipo}" ${ex.ativo ? 'checked' : ''} class="rounded accent-primary">
           <span class="font-bold text-sm text-gray-800">${EXAME_TIPO_LABEL[ex.tipo]}</span>
         </label>
-        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Preço (R$)</label>
-        <input type="number" id="exame-preco-${ex.tipo}" min="0" step="0.01" value="${ex.preco}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+
+        <label class="block text-[10px] font-bold text-gray-500 uppercase">Preço (R$)</label>
+        <input type="number" id="exame-preco-${ex.tipo}" min="0" step="0.01" value="${ex.preco}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
+
+        <label class="block text-[10px] font-bold text-gray-500 uppercase">Prazo (dias)</label>
+        <input type="number" id="exame-prazo-${ex.tipo}" min="1" value="${ex.prazo_dias}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
+
+        <label class="block text-[10px] font-bold text-gray-500 uppercase">Nº de Questões / Tempo (min)</label>
+        <div class="grid grid-cols-2 gap-1.5">
+          <input type="number" id="exame-nqtd-${ex.tipo}" min="1" value="${ex.numero_questoes}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
+          <input type="number" id="exame-tempo-${ex.tipo}" min="1" value="${ex.tempo_limite_minutos}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
+        </div>
+
+        <label class="block text-[10px] font-bold text-gray-500 uppercase">Nota de Corte</label>
+        <div class="grid grid-cols-2 gap-1.5">
+          <select id="exame-notatipo-${ex.tipo}" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+            <option value="percentual" ${ex.nota_corte_tipo === 'percentual' ? 'selected' : ''}>% acerto</option>
+            <option value="questoes" ${ex.nota_corte_tipo === 'questoes' ? 'selected' : ''}>Qtd. questões</option>
+          </select>
+          <input type="number" id="exame-notaval-${ex.tipo}" min="0" value="${ex.nota_corte_valor}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
+        </div>
+
+        <button type="button" onclick="abrirModalExamePerguntas(${ex.id || 'null'}, '${EXAME_TIPO_LABEL[ex.tipo]}')"
+          ${ex.id ? '' : 'disabled title="Salve o exame primeiro"'}
+          class="w-full text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg border ${ex.id ? 'border-primary text-primary hover:bg-primary/5' : 'border-gray-200 text-gray-300 cursor-not-allowed'}">
+          Banco de Questões
+        </button>
       </div>
     `).join('');
   } catch (e) {
-    el.innerHTML = `<p class="text-red-500 text-sm col-span-3">Erro ao carregar exames: ${e.message}</p>`;
+    el.innerHTML = `<p class="text-red-500 text-sm col-span-4">Erro ao carregar exames: ${e.message}</p>`;
   }
 }
 
 async function salvarExamesCurso() {
-  const tipos = ['QM', 'AU', 'TL'];
+  const tipos = ['AVALIACAO', 'QM', 'AU', 'TL'];
   const exames = tipos.map(tipo => ({
     tipo,
     ativo: document.getElementById('exame-ativo-' + tipo)?.checked ? 1 : 0,
     preco: parseFloat(document.getElementById('exame-preco-' + tipo)?.value || '0'),
+    prazo_dias: parseInt(document.getElementById('exame-prazo-' + tipo)?.value || '180'),
+    numero_questoes: parseInt(document.getElementById('exame-nqtd-' + tipo)?.value || '10'),
+    tempo_limite_minutos: parseInt(document.getElementById('exame-tempo-' + tipo)?.value || '60'),
+    nota_corte_tipo: document.getElementById('exame-notatipo-' + tipo)?.value || 'percentual',
+    nota_corte_valor: parseInt(document.getElementById('exame-notaval-' + tipo)?.value || '70'),
   }));
   try {
     await apiPut(_B() + '/api/admin/cursos/' + cursoAdminId + '/exames', { exames });
     alert('Exames salvos com sucesso!');
+    carregarExamesCurso(cursoAdminId);
   } catch (e) {
     alert('Erro ao salvar exames: ' + e.message);
   }
 }
+
+// ============ BANCO DE QUESTÕES DO EXAME ============
+let _exameAtualId = null;
+
+async function abrirModalExamePerguntas(exameCursoId, label) {
+  if (!exameCursoId) return;
+  _exameAtualId = exameCursoId;
+  document.getElementById('exame-perguntas-titulo').textContent = 'Banco de Questões — ' + label;
+  document.getElementById('modal-exame-perguntas').classList.remove('hidden');
+  document.getElementById('exame-nova-pergunta-form').reset();
+  await carregarExamePerguntas();
+}
+
+async function carregarExamePerguntas() {
+  const list = document.getElementById('exame-perguntas-lista');
+  list.innerHTML = 'Carregando...';
+  try {
+    const perguntas = await apiFetch(_B() + '/api/admin/exame-perguntas?exame_curso_id=' + _exameAtualId);
+    if (!perguntas.length) {
+      list.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Nenhuma pergunta cadastrada ainda.</p>';
+      return;
+    }
+    list.innerHTML = perguntas.map(p => `
+      <div class="border border-gray-200 rounded-lg p-3">
+        <div class="flex items-start justify-between gap-3">
+          <p class="text-sm font-medium text-gray-800">${esc(p.texto)}</p>
+          <button onclick="excluirExamePergunta(${p.id})" class="text-xs text-red-500 hover:underline shrink-0">Excluir</button>
+        </div>
+        <ul class="mt-2 space-y-1 text-xs text-gray-600">
+          ${p.opcoes.map(o => `<li class="${o.correta ? 'text-emerald-600 font-semibold' : ''}">${o.correta ? '✓' : '•'} ${esc(o.texto)}</li>`).join('')}
+        </ul>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<p class="text-red-500 text-sm">Erro: ${e.message}</p>`;
+  }
+}
+
+function adicionarAlternativaExame() {
+  const container = document.getElementById('exame-alternativas-container');
+  const idx = container.children.length;
+  if (idx >= 5) return;
+  const div = document.createElement('div');
+  div.className = 'flex items-center gap-2';
+  div.innerHTML = `
+    <input type="checkbox" class="exame-alt-correta accent-primary">
+    <input type="text" class="exame-alt-texto flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Alternativa ${idx + 1}" required>
+  `;
+  container.appendChild(div);
+}
+
+async function excluirExamePergunta(id) {
+  if (!confirm('Excluir esta pergunta?')) return;
+  try {
+    await apiDelete(_B() + '/api/admin/exame-perguntas/' + id);
+    carregarExamePerguntas();
+  } catch (e) {
+    alert('Erro ao excluir: ' + e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('exame-nova-pergunta-form');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const texto = document.getElementById('exame-pergunta-texto').value.trim();
+      const justificativa = document.getElementById('exame-pergunta-justificativa').value.trim();
+      const opcoes = [...document.querySelectorAll('#exame-alternativas-container > div')].map(div => ({
+        texto: div.querySelector('.exame-alt-texto').value.trim(),
+        correta: div.querySelector('.exame-alt-correta').checked,
+      }));
+      const err = document.getElementById('exame-pergunta-erro');
+      err.classList.add('hidden');
+      try {
+        await apiPost(_B() + '/api/admin/exame-perguntas', {
+          exame_curso_id: _exameAtualId, texto, justificativa, opcoes,
+        });
+        form.reset();
+        document.getElementById('exame-alternativas-container').innerHTML = '';
+        adicionarAlternativaExame();
+        adicionarAlternativaExame();
+        carregarExamePerguntas();
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.remove('hidden');
+      }
+    });
+  }
+});
 
 function renderModulosAdmin() {
   const list = document.getElementById('modulos-admin-list');
@@ -1276,7 +1397,7 @@ function ordenarAlunosAdmin(campo) {
 function renderAlunosAdminTable(linhas) {
   const tbody = document.getElementById('alunos-admin-tbody');
   if (!linhas.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">Nenhum aluno encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-gray-400">Nenhum aluno encontrado.</td></tr>';
     return;
   }
   tbody.innerHTML = linhas.map(row => {
@@ -1319,9 +1440,59 @@ function renderAlunosAdminTable(linhas) {
             : `<span class="text-xs text-gray-400">Pendente</span>`
           }
         </td>
+        <td class="px-4 py-3">
+          <button onclick="abrirProvasAlunoAdmin(${row.matricula_id})" class="text-xs text-primary hover:underline">
+            ${parseInt(row.provas_realizadas) > 0 ? `Ver Provas (${row.provas_realizadas})` : '—'}
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
+}
+
+const EXAME_TIPO_LABEL_PROVAS = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
+
+async function abrirProvasAlunoAdmin(matriculaId) {
+  document.getElementById('modal-provas-aluno').classList.remove('hidden');
+  const lista = document.getElementById('provas-aluno-lista');
+  lista.innerHTML = 'Carregando...';
+  try {
+    const data = await apiFetch(_B() + '/api/admin/alunos/' + matriculaId + '/provas');
+    const blocos = [];
+
+    if (data.exames.length) {
+      blocos.push('<h3 class="text-xs font-bold text-gray-500 uppercase">Avaliação / Exame Exemplar Global</h3>');
+      blocos.push(...data.exames.map(e => `
+        <div class="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+          <div>
+            <span class="font-semibold text-gray-800">${EXAME_TIPO_LABEL_PROVAS[e.exame_tipo] || e.exame_tipo}</span>
+            <p class="text-xs text-gray-400">${e.finalizado_em ? new Date(e.finalizado_em).toLocaleString('pt-BR') : 'Em andamento'}</p>
+          </div>
+          ${e.resultado
+            ? `<span class="text-xs font-bold ${e.resultado === 'aprovado' ? 'text-emerald-600' : 'text-red-600'}">${e.resultado === 'aprovado' ? 'Aprovado' : 'Reprovado'} (${e.acertos}/${e.total_questoes})</span>`
+            : '<span class="text-xs text-gray-400">Em andamento</span>'
+          }
+        </div>
+      `));
+    }
+
+    if (data.quizzes.length) {
+      blocos.push('<h3 class="text-xs font-bold text-gray-500 uppercase pt-2">Quiz das Aulas</h3>');
+      blocos.push(...data.quizzes.map(q => `
+        <div class="border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+          <div>
+            <span class="font-semibold text-gray-800">${esc(q.aula_titulo)}</span>
+            <p class="text-xs text-gray-400">${q.updated_at ? new Date(q.updated_at).toLocaleString('pt-BR') : ''}</p>
+          </div>
+          <span class="text-xs font-bold ${q.aprovado ? 'text-emerald-600' : 'text-red-600'}">${q.nota}% (${q.acertos}/${q.total_perguntas})</span>
+        </div>
+      `));
+    }
+
+    lista.innerHTML = blocos.length ? blocos.join('') : '<p class="text-gray-400 text-center py-6">Nenhuma prova realizada ainda.</p>';
+  } catch (e) {
+    lista.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`;
+  }
 }
 
 async function editarPrazoAlunoAdmin(matriculaId, dataAtual) {

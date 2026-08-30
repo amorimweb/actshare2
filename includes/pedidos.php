@@ -41,14 +41,23 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
         $stmt->execute([$pedidoId]);
         $itens = $stmt->fetchAll();
 
-        // Expande combos em uma matrícula por curso contido (Lote F)
+        // Expande combos em uma matrícula por curso contido (Lote F). Todo
+        // produto do combo herda a MESMA validade do combo (prazo_validade_dias),
+        // em vez do prazo individual de cada curso — pedido explícito do cliente.
         $itensExpandidos = [];
         foreach ($itens as $item) {
             if (!empty($item['combo_id'])) {
-                $stmtCombo = $db->prepare('SELECT curso_id FROM combo_itens WHERE combo_id = ?');
+                $stmtCombo = $db->prepare('SELECT prazo_validade_dias FROM combos WHERE id = ? LIMIT 1');
                 $stmtCombo->execute([$item['combo_id']]);
-                foreach ($stmtCombo->fetchAll() as $ci) {
-                    $itensExpandidos[] = ['curso_id' => (int)$ci['curso_id'], 'vagas' => $item['vagas'], 'com_prova' => $item['com_prova'], 'exames_selecionados' => $item['exames_selecionados'] ?? null];
+                $comboPrazoDias = (int)($stmtCombo->fetchColumn() ?: 0) ?: null;
+
+                $stmtItensCombo = $db->prepare('SELECT curso_id FROM combo_itens WHERE combo_id = ? ORDER BY ordem');
+                $stmtItensCombo->execute([$item['combo_id']]);
+                foreach ($stmtItensCombo->fetchAll() as $ci) {
+                    $itensExpandidos[] = [
+                        'curso_id' => (int)$ci['curso_id'], 'vagas' => $item['vagas'], 'com_prova' => $item['com_prova'],
+                        'exames_selecionados' => $item['exames_selecionados'] ?? null, 'prazo_dias_override' => $comboPrazoDias,
+                    ];
                 }
             } else {
                 $itensExpandidos[] = $item;
@@ -59,11 +68,15 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
             $cursoId = (int)$item['curso_id'];
             $vagas   = (int)$item['vagas'];
 
-            $stmtC = $db->prepare('SELECT prazo_conclusao_dias FROM cursos WHERE id = ? LIMIT 1');
-            $stmtC->execute([$cursoId]);
-            $curso = $stmtC->fetch();
-            $prazoDias = $curso ? (int)$curso['prazo_conclusao_dias'] : 180;
-            if (!$prazoDias) $prazoDias = 180;
+            if (!empty($item['prazo_dias_override'])) {
+                $prazoDias = (int)$item['prazo_dias_override'];
+            } else {
+                $stmtC = $db->prepare('SELECT prazo_conclusao_dias FROM cursos WHERE id = ? LIMIT 1');
+                $stmtC->execute([$cursoId]);
+                $curso = $stmtC->fetch();
+                $prazoDias = $curso ? (int)$curso['prazo_conclusao_dias'] : 180;
+                if (!$prazoDias) $prazoDias = 180;
+            }
 
             $dataFimAcesso = date('Y-m-d H:i:s', time() + ($prazoDias * 24 * 3600));
             $comProva = (int)$item['com_prova'];
@@ -104,7 +117,15 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
 
         $stmt = $db->prepare('SELECT id, nome, email, role FROM usuarios WHERE id = ? LIMIT 1');
         $stmt->execute([$pedido['usuario_id']]);
-        return ['already_paid' => false, 'updated_user' => $stmt->fetch()];
+        $updatedUser = $stmt->fetch();
+
+        require_once __DIR__ . '/email_templates.php';
+        enviarEmailTemplate($db, 'pagamento_confirmado', $updatedUser['email'], [
+            'nome' => $updatedUser['nome'],
+            'pedido_id' => $pedidoId,
+        ]);
+
+        return ['already_paid' => false, 'updated_user' => $updatedUser];
     } catch (Exception $e) {
         $db->rollBack();
         throw $e;

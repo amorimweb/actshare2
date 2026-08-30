@@ -52,14 +52,16 @@ function renderCardCurso(curso) {
   exames.forEach(ex => { examesMap[ex.tipo] = parseFloat(ex.preco); });
   const cardId = 'card-curso-' + curso.id;
 
-  const botoesExame = ['QM', 'AU', 'TL'].map(tipo => {
+  const EXAME_LABEL_CARD = { AVALIACAO: 'Avaliação', QM: 'QM', AU: 'AU', TL: 'TL' };
+  const botoesExame = ['AVALIACAO', 'QM', 'AU', 'TL'].map(tipo => {
     const disponivel = examesMap.hasOwnProperty(tipo);
     return `<button type="button" onclick="toggleExameCard(event, '${cardId}', ${curso.id}, '${tipo}', ${disponivel})"
         id="${cardId}-btn-${tipo}" data-preco="${examesMap[tipo] || 0}"
         class="exame-card-btn text-[10px] font-bold uppercase px-2 py-1 rounded border transition-colors ${disponivel ? 'border-gray-200 text-gray-500 hover:border-primary hover:text-primary' : 'border-gray-100 text-gray-300 cursor-not-allowed'}">
-        ${tipo}
+        ${EXAME_LABEL_CARD[tipo]}
       </button>`;
   }).join('');
+  const linkExplicacao = `<a href="${_B()}/explicacao-exames" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-100 text-gray-400 hover:bg-primary hover:text-white transition-colors text-[10px] font-bold" title="O que é isso?">?</a>`;
 
   return `
     <div id="${cardId}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col" data-preco-base="${curso.preco}">
@@ -78,9 +80,10 @@ function renderCardCurso(curso) {
       </a>
       <div class="px-4 pb-4 mt-auto">
         ${curso.preco > 0 ? `
-          <div class="flex items-center gap-1.5 mb-2">
+          <div class="flex items-center gap-1.5 mb-2 flex-wrap">
             <span class="text-[10px] font-bold uppercase px-2 py-1 rounded border border-primary bg-primary/5 text-primary">Treinamento</span>
             ${botoesExame}
+            ${linkExplicacao}
           </div>
         ` : ''}
         <div class="flex items-center justify-between text-xs text-gray-400">

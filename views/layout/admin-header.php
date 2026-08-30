@@ -132,9 +132,19 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
         Cupons de Desconto
       </a>
 
+      <a href="<?= BASE_PATH ?>/admin/desconto-progressivo" class="sidebar-link <?= $adminPath === 'admin/desconto-progressivo' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        Desconto Progressivo
+      </a>
+
       <a href="<?= BASE_PATH ?>/admin/combos" class="sidebar-link <?= $adminPath === 'admin/combos' ? 'active' : '' ?>">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
         Combos
+      </a>
+
+      <a href="<?= BASE_PATH ?>/admin/exames" class="sidebar-link <?= $adminPath === 'admin/exames' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        Exames
       </a>
 
       <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Certificados</p>
@@ -149,6 +159,11 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
       <a href="<?= BASE_PATH ?>/admin/usuarios" class="sidebar-link <?= $adminPath === 'admin/usuarios' ? 'active' : '' ?>">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         Usuários
+      </a>
+
+      <a href="<?= BASE_PATH ?>/admin/email-templates" class="sidebar-link <?= $adminPath === 'admin/email-templates' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        E-mails
       </a>
 
     </nav>

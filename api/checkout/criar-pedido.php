@@ -208,6 +208,13 @@ try {
     
     $db->commit();
 
+    require_once __DIR__ . '/../../includes/email_templates.php';
+    enviarEmailTemplate($db, 'pedido_recebido', $user['email'], [
+        'nome' => $user['nome'] ?? '',
+        'pedido_id' => $pedidoId,
+        'total' => number_format($totalLiquido, 2, ',', '.'),
+    ]);
+
     $responsePayload = [
         'pedido_id'      => $pedidoId,
         'total_liquido'  => $totalLiquido,

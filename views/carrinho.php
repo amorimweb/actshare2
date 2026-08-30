@@ -36,7 +36,7 @@ require __DIR__ . '/layout/header.php';
             <span id="resumo-subtotal" class="font-medium text-gray-800">R$ 0,00</span>
           </div>
           <div class="flex justify-between text-secondary hidden" id="resumo-desc-prog-block">
-            <span>Desconto Progressivo B2B</span>
+            <span>Desconto Progressivo</span>
             <span id="resumo-desc-prog">- R$ 0,00</span>
           </div>
           <div class="flex justify-between text-secondary hidden" id="resumo-desc-fidelidade-block">
@@ -54,8 +54,8 @@ require __DIR__ . '/layout/header.php';
           <label for="input-cupom" class="block text-xs font-semibold text-gray-500 uppercase">Cupom de Desconto</label>
           <div class="flex gap-2">
             <input type="text" id="input-cupom" placeholder="Código do cupom..."
-              class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow uppercase">
-            <button onclick="aplicarCupom()" id="btn-cupom" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-4 py-2 rounded-lg transition-colors border border-gray-200 shadow-sm">
+              class="min-w-0 flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow uppercase">
+            <button onclick="aplicarCupom()" id="btn-cupom" class="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-4 py-2 rounded-lg transition-colors border border-gray-200 shadow-sm">
               Aplicar
             </button>
           </div>
@@ -88,11 +88,23 @@ require __DIR__ . '/layout/header.php';
 <script>
   const CARRINHO_KEY = 'act_carrinho';
   const CUPOM_KEY = 'act_cupom_ativo';
+  const EXAME_TIPO_LABEL = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
   let cupomAtivo = null;
+  let faixasDesconto = [];
+  let cursosCache = {}; // curso_id -> { preco, exames: [{tipo,preco,ativo}] }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    carregarCarrinho();
+  document.addEventListener('DOMContentLoaded', async () => {
+    try { faixasDesconto = await apiFetch(BASE + '/api/configuracoes/desconto-progressivo'); } catch { faixasDesconto = []; }
+    await carregarCarrinho();
   });
+
+  function percentualProgressivo(vagas) {
+    for (let i = faixasDesconto.length - 1; i >= 0; i--) {
+      const f = faixasDesconto[i];
+      if (vagas >= f.min && (f.max === null || vagas <= f.max)) return f.percentual;
+    }
+    return 0;
+  }
 
   function getCarrinho() {
     try { return JSON.parse(localStorage.getItem(CARRINHO_KEY)) || []; } catch { return []; }
@@ -105,14 +117,25 @@ require __DIR__ . '/layout/header.php';
     }
   }
 
-  function carregarCarrinho() {
+  async function carregarCarrinho() {
     const list = document.getElementById('carrinho-itens-list');
     const loading = document.getElementById('carrinho-loading');
     const vazio = document.getElementById('carrinho-vazio');
     const resumo = document.getElementById('resumo-pedido');
-    
+
     const cart = getCarrinho();
     loading.classList.add('hidden');
+
+    // Busca preço-base + exames disponíveis de cada curso do carrinho (pra
+    // permitir religar/desligar Avaliação/Exame direto no card)
+    const cursoIds = [...new Set(cart.filter(i => i.curso_id && !i.combo_id).map(i => i.curso_id))];
+    await Promise.all(cursoIds.map(async (id) => {
+      if (cursosCache[id]) return;
+      try {
+        const curso = await apiFetch(BASE + '/api/cursos/' + id);
+        cursosCache[id] = { preco: parseFloat(curso.preco), exames: curso.exames || [] };
+      } catch { cursosCache[id] = { preco: null, exames: [] }; }
+    }));
     
     // Carrega cupom salvo se houver
     try { cupomAtivo = JSON.parse(localStorage.getItem(CUPOM_KEY)) || null; } catch { cupomAtivo = null; }
@@ -144,60 +167,99 @@ require __DIR__ . '/layout/header.php';
 
   function renderItens(cart) {
     const container = document.getElementById('carrinho-itens-list');
-    
+
     container.innerHTML = cart.map((item, idx) => {
       const preco = parseFloat(item.preco);
       const subtotal = preco * item.vagas;
-      
-      // Info de B2B
-      let b2bHtml = '';
-      if (item.vagas >= 2 && item.vagas <= 5) {
-        b2bHtml = `<span class="inline-block text-[10px] bg-orange-50 text-orange-600 border border-orange-100 rounded px-1.5 py-0.5 font-bold">5% desc. progressivo B2B</span>`;
-      } else if (item.vagas >= 6 && item.vagas <= 10) {
-        b2bHtml = `<span class="inline-block text-[10px] bg-orange-50 text-orange-600 border border-orange-100 rounded px-1.5 py-0.5 font-bold">10% desc. progressivo B2B</span>`;
-      } else if (item.vagas > 10) {
-        b2bHtml = `<span class="inline-block text-[10px] bg-orange-50 text-orange-600 border border-orange-100 rounded px-1.5 py-0.5 font-bold">15% desc. progressivo B2B</span>`;
+      const pct = percentualProgressivo(item.vagas);
+      const progHtml = pct > 0
+        ? `<span class="inline-block text-[10px] bg-orange-50 text-orange-600 border border-orange-100 rounded px-1.5 py-0.5 font-bold">${pct}% Desc. Progressivo</span>`
+        : '';
+
+      const cursoInfo = item.curso_id ? cursosCache[item.curso_id] : null;
+      const examesSelecionados = (item.exames_selecionados || '').split(',').filter(Boolean);
+
+      let examesHtml = '';
+      if (!item.combo_id && cursoInfo && cursoInfo.exames.length > 0) {
+        examesHtml = `
+          <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+            ${cursoInfo.exames.map(ex => `
+              <label class="flex items-center gap-1 cursor-pointer select-none">
+                <input type="checkbox" class="accent-secondary w-3.5 h-3.5" ${examesSelecionados.includes(ex.tipo) ? 'checked' : ''}
+                  onchange="toggleExameCarrinho(${idx}, '${ex.tipo}')">
+                ${EXAME_TIPO_LABEL[ex.tipo] || ex.tipo}
+              </label>
+            `).join('')}
+          </div>
+        `;
       }
 
       return `
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row gap-5 items-center justify-between">
-          <div class="flex items-center gap-4 w-full sm:w-auto">
+          <div class="flex items-center gap-4 w-full sm:flex-1 sm:min-w-0">
             ${item.thumb_url
               ? `<img src="${item.thumb_url}" alt="" class="w-16 h-16 rounded-xl object-cover flex-shrink-0">`
               : `<div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-blue-800 flex items-center justify-center text-white/20 font-bold text-xs flex-shrink-0">EAD</div>`
             }
-            <div>
-              <h4 class="font-bold text-gray-800 text-sm line-clamp-1">${esc(item.titulo)}</h4>
+            <div class="min-w-0">
+              <h4 class="font-bold text-gray-800 text-sm line-clamp-2">${esc(item.titulo)}</h4>
               <p class="text-xs text-gray-400 mt-0.5">Valor unitário: R$ ${preco.toFixed(2).replace('.', ',')}</p>
               <div class="mt-1 flex flex-wrap gap-1.5 items-center">
                 ${item.combo_id
                   ? `<span class="inline-block text-[9px] bg-secondary/10 text-secondary border border-secondary/30 rounded px-1.5 py-0.5 font-bold">Combo</span>`
-                  : (item.exames_selecionados
-                      ? `<span class="inline-block text-[9px] bg-green-50 text-green-600 border border-green-150 rounded px-1.5 py-0.5 font-bold">Exame ${esc(item.exames_selecionados.replace(/,/g, '/'))}</span>`
-                      : `<span class="inline-block text-[9px] bg-gray-50 text-gray-500 border border-gray-150 rounded px-1.5 py-0.5 font-bold">Sem Exame</span>`)
+                  : ''
                 }
-                ${b2bHtml}
+                ${progHtml}
               </div>
+              ${examesHtml}
             </div>
           </div>
 
-          <div class="flex items-center gap-6 justify-between w-full sm:w-auto border-t sm:border-t-0 pt-4 sm:pt-0">
+          <div class="flex items-center gap-6 justify-between w-full sm:w-auto shrink-0 border-t sm:border-t-0 pt-4 sm:pt-0">
             <!-- Controle de Vagas -->
-            <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden bg-gray-50 shadow-sm">
-              <button onclick="alterarVagas(${idx}, -1)" class="px-3 py-1.5 text-gray-500 hover:bg-gray-100 transition-colors font-bold text-sm focus:outline-none">-</button>
-              <span class="px-3 py-1 text-xs font-bold text-gray-700 select-none">${item.vagas} vaga(s)</span>
-              <button onclick="alterarVagas(${idx}, 1)" class="px-3 py-1.5 text-gray-500 hover:bg-gray-100 transition-colors font-bold text-sm focus:outline-none">+</button>
+            <div class="flex items-center justify-center border border-gray-300 rounded-xl overflow-hidden bg-gray-50 shadow-sm w-28">
+              <button onclick="alterarVagas(${idx}, -1)" class="w-8 py-1.5 text-gray-500 hover:bg-gray-100 transition-colors font-bold text-sm focus:outline-none">-</button>
+              <span class="flex-1 text-center text-xs font-bold text-gray-700 select-none">${item.vagas}</span>
+              <button onclick="alterarVagas(${idx}, 1)" class="w-8 py-1.5 text-gray-500 hover:bg-gray-100 transition-colors font-bold text-sm focus:outline-none">+</button>
             </div>
-            
+
             <!-- Preço e Ação -->
             <div class="text-right flex flex-col items-end">
-              <span class="font-extrabold text-gray-800 text-sm">R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
+              <span class="font-extrabold text-gray-800 text-sm whitespace-nowrap">R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
               <button onclick="removerItem(${idx})" class="text-[10px] text-red-500 font-bold hover:text-red-700 hover:underline mt-1.5">Excluir</button>
             </div>
           </div>
         </div>
       `;
     }).join('');
+  }
+
+  function toggleExameCarrinho(idx, tipo) {
+    const cart = getCarrinho();
+    const item = cart[idx];
+    if (!item || !item.curso_id) return;
+    const cursoInfo = cursosCache[item.curso_id];
+    if (!cursoInfo) return;
+
+    let selecionados = (item.exames_selecionados || '').split(',').filter(Boolean);
+    if (selecionados.includes(tipo)) {
+      selecionados = selecionados.filter(t => t !== tipo);
+    } else {
+      selecionados.push(tipo);
+    }
+    item.exames_selecionados = selecionados.join(',');
+
+    const basePreco = cursoInfo.preco != null ? cursoInfo.preco : parseFloat(item.preco);
+    let novoPreco = basePreco;
+    selecionados.forEach(t => {
+      const ex = cursoInfo.exames.find(e => e.tipo === t);
+      if (ex) novoPreco += parseFloat(ex.preco);
+    });
+    item.preco = novoPreco;
+    item.com_prova = selecionados.length > 0 ? 1 : 0;
+
+    saveCarrinho(cart);
+    carregarCarrinho();
   }
 
   function alterarVagas(idx, diff) {
@@ -230,13 +292,8 @@ require __DIR__ . '/layout/header.php';
       const preco = parseFloat(item.preco);
       const subtotalItem = preco * item.vagas;
       subtotalBruto += subtotalItem;
-      
-      // Cálculo progressivo
-      let pct = 0;
-      if (item.vagas >= 2 && item.vagas <= 5) pct = 5;
-      else if (item.vagas >= 6 && item.vagas <= 10) pct = 10;
-      else if (item.vagas > 10) pct = 15;
-      
+
+      const pct = percentualProgressivo(item.vagas);
       if (pct > 0) {
         descontoProg += subtotalItem * (pct / 100);
       }
@@ -302,10 +359,7 @@ require __DIR__ . '/layout/header.php';
         const preco = parseFloat(item.preco);
         const subtotalItem = preco * item.vagas;
         subtotalBruto += subtotalItem;
-        let pct = 0;
-        if (item.vagas >= 2 && item.vagas <= 5) pct = 5;
-        else if (item.vagas >= 6 && item.vagas <= 10) pct = 10;
-        else if (item.vagas > 10) pct = 15;
+        const pct = percentualProgressivo(item.vagas);
         if (pct > 0) {
           descontoProg += subtotalItem * (pct / 100);
         }
