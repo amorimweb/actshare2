@@ -11,22 +11,27 @@ if ($method === 'GET') {
     $moduloId = isset($_GET['modulo_id']) && $_GET['modulo_id'] !== '' ? (int)$_GET['modulo_id'] : null;
     $aulaId   = isset($_GET['aula_id']) && $_GET['aula_id'] !== '' ? (int)$_GET['aula_id'] : null;
 
+    // Resolve curso/módulo sempre pela aula (fonte da verdade), não pela coluna
+    // p.curso_id/p.modulo_id isolada — perguntas antigas podem ter ficado com
+    // esses campos nulos mesmo pertencendo a um curso/aula válidos.
     $query = "
-        SELECT p.*, c.titulo AS curso_titulo, m.titulo AS modulo_titulo, a.titulo AS aula_titulo, a.e_prova
+        SELECT p.*, rc.id AS resolved_curso_id, rc.titulo AS curso_titulo,
+               rm.id AS resolved_modulo_id, rm.titulo AS modulo_titulo,
+               a.titulo AS aula_titulo, a.e_prova
         FROM perguntas p
-        LEFT JOIN cursos c ON p.curso_id = c.id
-        LEFT JOIN modulos m ON p.modulo_id = m.id
         LEFT JOIN aulas a ON p.aula_id = a.id
+        LEFT JOIN modulos rm ON rm.id = a.modulo_id
+        LEFT JOIN cursos rc ON rc.id = rm.curso_id
     ";
-    
+
     $where = [];
     $params = [];
     if ($cursoId) {
-        $where[] = "p.curso_id = ?";
+        $where[] = "rc.id = ?";
         $params[] = $cursoId;
     }
     if ($moduloId) {
-        $where[] = "p.modulo_id = ?";
+        $where[] = "rm.id = ?";
         $params[] = $moduloId;
     }
     if ($aulaId) {
@@ -58,8 +63,6 @@ if ($method === 'POST') {
     $texto         = trim($body['texto'] ?? '');
     $imagemUrl     = trim($body['imagem_url'] ?? '') ?: null;
     $justificativa = trim($body['justificativa'] ?? '');
-    $cursoId       = isset($body['curso_id']) && $body['curso_id'] !== '' ? (int)$body['curso_id'] : null;
-    $moduloId      = isset($body['modulo_id']) && $body['modulo_id'] !== '' ? (int)$body['modulo_id'] : null;
     $aulaId        = isset($body['aula_id']) && $body['aula_id'] !== '' ? (int)$body['aula_id'] : null;
     $opcoes        = $body['opcoes'] ?? [];
 
@@ -78,6 +81,18 @@ if ($method === 'POST') {
     if (count($opcoes) > 5) {
         jsonError('A pergunta pode ter no máximo 5 alternativas.', 400);
     }
+
+    // curso_id/modulo_id sempre derivados da aula no servidor — nunca confia no
+    // que o cliente mandar, pra esses campos nunca ficarem dessincronizados
+    // (foi exatamente isso que quebrou o filtro do Banco de Questões antes).
+    $stmtAula = $db->prepare('SELECT m.curso_id, a.modulo_id FROM aulas a JOIN modulos m ON m.id = a.modulo_id WHERE a.id = ?');
+    $stmtAula->execute([$aulaId]);
+    $aulaInfo = $stmtAula->fetch();
+    if (!$aulaInfo) {
+        jsonError('Aula não encontrada.', 400);
+    }
+    $cursoId  = (int)$aulaInfo['curso_id'];
+    $moduloId = (int)$aulaInfo['modulo_id'];
 
     $db->beginTransaction();
     try {

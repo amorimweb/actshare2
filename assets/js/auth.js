@@ -36,23 +36,9 @@ function updateHeaderAuth(user) {
   const guestEls = document.querySelectorAll('#auth-guest, #mobile-auth-guest');
   const userEls  = document.querySelectorAll('#auth-user, #mobile-auth-user');
 
-  // Desktop navs: usar apenas hidden/remover-hidden — o md:flex cuida do display
-  const navPublicDesktop = document.getElementById('nav-public');
-  const navAlunoDesktop  = document.getElementById('nav-aluno');
-  // Mobile navs (dentro do menu hamburguer)
-  const mobileNavPublic = document.getElementById('mobile-nav-public');
-  const mobileNavAluno  = document.getElementById('mobile-nav-aluno');
-
   if (user) {
     guestEls.forEach(el => { el.classList.remove('flex'); el.classList.add('hidden'); });
     userEls.forEach(el  => { el.classList.remove('hidden'); el.classList.add('flex'); });
-
-    navPublicDesktop?.classList.add('hidden');
-    navPublicDesktop?.classList.remove('md:flex');
-    navAlunoDesktop?.classList.remove('hidden');
-    navAlunoDesktop?.classList.add('md:flex');
-    mobileNavPublic?.classList.add('hidden');
-    mobileNavAluno?.classList.remove('hidden');
 
     const firstName = user.nome ? user.nome.trim().split(' ')[0] : 'Aluno';
     const nameEl = document.getElementById('header-username');
@@ -109,13 +95,6 @@ function updateHeaderAuth(user) {
   } else {
     guestEls.forEach(el => { el.classList.remove('hidden'); el.classList.add('flex'); });
     userEls.forEach(el  => { el.classList.remove('flex'); el.classList.add('hidden'); });
-
-    navPublicDesktop?.classList.remove('hidden');
-    navPublicDesktop?.classList.add('md:flex');
-    navAlunoDesktop?.classList.add('hidden');
-    navAlunoDesktop?.classList.remove('md:flex');
-    mobileNavPublic?.classList.remove('hidden');
-    mobileNavAluno?.classList.add('hidden');
   }
 }
 

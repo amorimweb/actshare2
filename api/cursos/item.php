@@ -52,6 +52,11 @@ if ($method === 'GET') {
     $stmtPre->execute([$id]);
     $curso['prerequisitos'] = $stmtPre->fetchAll();
 
+    // Exame Exemplar Global (QM/AU/TL) disponíveis para este curso
+    $stmtEx = $db->prepare('SELECT id, tipo, preco, ativo FROM exames_curso WHERE curso_id = ? AND ativo = 1');
+    $stmtEx->execute([$id]);
+    $curso['exames'] = $stmtEx->fetchAll();
+
     jsonOk($curso);
 }
 

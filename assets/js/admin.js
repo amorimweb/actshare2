@@ -3,32 +3,15 @@ var _B = _B || (() => (typeof BASE !== 'undefined' ? BASE : ''));
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ============ CURSOS ADMIN ============
+var _cursosAdminRaw = [];
+var _cursosAdminSortCampo = null;
+var _cursosAdminSortDir = 'asc';
+
 async function carregarCursosAdmin() {
   const tbody = document.getElementById('cursos-tbody');
   try {
-    const cursos = await apiFetch(_B() + '/api/cursos');
-    if (!cursos.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">Nenhum curso cadastrado.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = cursos.map(c => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-5 py-3 font-medium text-gray-800">${esc(c.titulo)}</td>
-        <td class="px-5 py-3 text-gray-500">${esc(c.categoria?.nome || '—')}</td>
-        <td class="px-5 py-3">
-          <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${c.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
-            ${c.ativo ? 'Ativo' : 'Inativo'}
-          </span>
-        </td>
-        <td class="px-5 py-3">
-          <div class="flex gap-2">
-            <a href="${_B()}/admin/cursos/${c.id}" class="text-xs text-primary hover:underline">Editar</a>
-            <button onclick="duplicarCursoAdmin(${c.id})" class="text-xs text-gray-500 hover:underline">Duplicar</button>
-            <button onclick="excluirCursoAdmin(${c.id})" class="text-xs text-red-500 hover:underline">Excluir</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    _cursosAdminRaw = await apiFetch(_B() + '/api/cursos');
+    renderCursosAdminTable(_cursosAdminRaw);
 
     // Preenche select de categorias no modal
     const catSelect = document.getElementById('curso-categoria');
@@ -54,6 +37,45 @@ async function carregarCursosAdmin() {
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`;
   }
+}
+
+function filtrarCursosAdmin() {
+  const q = (document.getElementById('cursos-busca')?.value || '').toLowerCase().trim();
+  let lista = !q ? _cursosAdminRaw : _cursosAdminRaw.filter(c => (c.titulo || '').toLowerCase().includes(q));
+  if (_cursosAdminSortCampo) lista = ordenarLista(lista, _cursosAdminSortCampo, _cursosAdminSortDir);
+  renderCursosAdminTable(lista);
+}
+
+function ordenarCursosAdmin(campo) {
+  _cursosAdminSortDir = (_cursosAdminSortCampo === campo && _cursosAdminSortDir === 'asc') ? 'desc' : 'asc';
+  _cursosAdminSortCampo = campo;
+  filtrarCursosAdmin();
+}
+
+function renderCursosAdminTable(cursos) {
+  const tbody = document.getElementById('cursos-tbody');
+  if (!cursos.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">Nenhum curso encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = cursos.map(c => `
+    <tr class="hover:bg-gray-50">
+      <td class="px-5 py-3 font-medium text-gray-800">${esc(c.titulo)}</td>
+      <td class="px-5 py-3 text-gray-500">${esc(c.categoria?.nome || '—')}</td>
+      <td class="px-5 py-3">
+        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${c.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
+          ${c.ativo ? 'Ativo' : 'Inativo'}
+        </span>
+      </td>
+      <td class="px-5 py-3">
+        <div class="flex gap-2">
+          <a href="${_B()}/admin/cursos/${c.id}" class="text-xs text-primary hover:underline">Editar</a>
+          <button onclick="duplicarCursoAdmin(${c.id})" class="text-xs text-gray-500 hover:underline">Duplicar</button>
+          <button onclick="excluirCursoAdmin(${c.id})" class="text-xs text-red-500 hover:underline">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function abrirModalNovoCurso() {
@@ -461,11 +483,40 @@ async function excluirInstrutorAdmin(id) {
 // ============ USUÁRIOS ADMIN ============
 let _usuariosList = [];
 
+var _usuariosSortCampo = null;
+var _usuariosSortDir = 'asc';
+
 async function carregarUsuariosAdmin() {
   const tbody = document.getElementById('users-tbody');
   try {
     _usuariosList = await apiFetch(_B() + '/api/admin/usuarios');
-    tbody.innerHTML = _usuariosList.map(u => `
+    renderUsuariosAdminTable(_usuariosList);
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`; }
+}
+
+function filtrarUsuariosAdmin() {
+  const q = (document.getElementById('usuarios-busca')?.value || '').toLowerCase().trim();
+  let lista = !q ? _usuariosList : _usuariosList.filter(u =>
+    (u.nome || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+  );
+  if (_usuariosSortCampo) lista = ordenarLista(lista, _usuariosSortCampo, _usuariosSortDir);
+  renderUsuariosAdminTable(lista);
+}
+
+function ordenarUsuariosAdmin(campo) {
+  _usuariosSortDir = (_usuariosSortCampo === campo && _usuariosSortDir === 'asc') ? 'desc' : 'asc';
+  _usuariosSortCampo = campo;
+  filtrarUsuariosAdmin();
+}
+
+function renderUsuariosAdminTable(lista) {
+  const tbody = document.getElementById('users-tbody');
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Nenhum usuário encontrado.</td></tr>';
+    return;
+  }
+  {
+    tbody.innerHTML = lista.map(u => `
       <tr class="hover:bg-gray-50">
         <td class="px-5 py-3 font-medium text-gray-800">${esc(u.nome)}</td>
         <td class="px-5 py-3 text-gray-500">${esc(u.email)}</td>
@@ -482,7 +533,7 @@ async function carregarUsuariosAdmin() {
         </td>
       </tr>
     `).join('');
-  } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`; }
+  }
 }
 
 async function alterarRole(userId, role) {
@@ -511,9 +562,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (formFicha) {
     formFicha.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btn = document.getElementById('btn-salvar-ficha');
       const err = document.getElementById('ficha-erro');
-      btn.disabled = true; err.classList.add('hidden');
+      err.classList.add('hidden');
+
+      const fichaDoc = document.getElementById('ficha-documento').value.trim();
+      if (fichaDoc && !documentoValido(fichaDoc)) {
+        err.textContent = 'CPF ou CNPJ inválido — confira a quantidade de dígitos.';
+        err.classList.remove('hidden');
+        return;
+      }
+      const fichaTel = document.getElementById('ficha-telefone').value.trim();
+      if (fichaTel && !telefoneValido(fichaTel)) {
+        err.textContent = 'Telefone inválido — confira o DDD e a quantidade de dígitos.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('btn-salvar-ficha');
+      btn.disabled = true;
 
       const body = {
         id: document.getElementById('ficha-id').value,
@@ -546,8 +612,47 @@ async function carregarCursoAdmin(id) {
     document.getElementById('ca-titulo').textContent    = _cursoAdminData.titulo;
     document.getElementById('ca-descricao').textContent = _cursoAdminData.descricao || '';
     renderModulosAdmin();
+    carregarExamesCurso(id);
   } catch (e) {
     document.getElementById('curso-admin-loading').textContent = 'Erro: ' + e.message;
+  }
+}
+
+// ============ EXAME EXEMPLAR GLOBAL (QM/AU/TL) ============
+const EXAME_TIPO_LABEL = { QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
+
+async function carregarExamesCurso(cursoId) {
+  const el = document.getElementById('exames-curso-list');
+  if (!el) return;
+  try {
+    const exames = await apiFetch(_B() + '/api/admin/cursos/' + cursoId + '/exames');
+    el.innerHTML = exames.map(ex => `
+      <div class="border border-gray-200 rounded-xl p-4">
+        <label class="flex items-center gap-2 mb-3">
+          <input type="checkbox" id="exame-ativo-${ex.tipo}" ${ex.ativo ? 'checked' : ''} class="rounded accent-primary">
+          <span class="font-bold text-sm text-gray-800">${EXAME_TIPO_LABEL[ex.tipo]}</span>
+        </label>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Preço (R$)</label>
+        <input type="number" id="exame-preco-${ex.tipo}" min="0" step="0.01" value="${ex.preco}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = `<p class="text-red-500 text-sm col-span-3">Erro ao carregar exames: ${e.message}</p>`;
+  }
+}
+
+async function salvarExamesCurso() {
+  const tipos = ['QM', 'AU', 'TL'];
+  const exames = tipos.map(tipo => ({
+    tipo,
+    ativo: document.getElementById('exame-ativo-' + tipo)?.checked ? 1 : 0,
+    preco: parseFloat(document.getElementById('exame-preco-' + tipo)?.value || '0'),
+  }));
+  try {
+    await apiPut(_B() + '/api/admin/cursos/' + cursoAdminId + '/exames', { exames });
+    alert('Exames salvos com sucesso!');
+  } catch (e) {
+    alert('Erro ao salvar exames: ' + e.message);
   }
 }
 
@@ -908,4 +1013,325 @@ async function excluirCurso() {
     await apiDelete(_B() + '/api/cursos/' + cursoAdminId);
     window.location.href = _B() + '/admin/cursos';
   } catch (e) { alert('Erro ao excluir curso: ' + e.message); }
+}
+
+// ============ CLIENTES ADMIN (Comercial) ============
+var _clientesAdminRaw = [];
+var _clientesAdminSortCampo = null;
+var _clientesAdminSortDir = 'asc';
+
+async function carregarClientesAdmin() {
+  const tbody = document.getElementById('clientes-tbody');
+  try {
+    _clientesAdminRaw = await apiFetch(_B() + '/api/admin/clientes');
+    renderClientesAdminTable(_clientesAdminRaw);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+function filtrarClientesAdmin() {
+  const q = (document.getElementById('clientes-busca')?.value || '').toLowerCase().trim();
+  let lista = !q ? _clientesAdminRaw : _clientesAdminRaw.filter(c =>
+    (c.nome || '').toLowerCase().includes(q) ||
+    (c.email || '').toLowerCase().includes(q) ||
+    (c.cidade || '').toLowerCase().includes(q)
+  );
+  if (_clientesAdminSortCampo) lista = ordenarLista(lista, _clientesAdminSortCampo, _clientesAdminSortDir);
+  renderClientesAdminTable(lista);
+}
+
+function ordenarClientesAdmin(campo) {
+  _clientesAdminSortDir = (_clientesAdminSortCampo === campo && _clientesAdminSortDir === 'asc') ? 'desc' : 'asc';
+  _clientesAdminSortCampo = campo;
+  filtrarClientesAdmin();
+}
+
+function renderClientesAdminTable(clientes) {
+  const tbody = document.getElementById('clientes-tbody');
+  if (!clientes.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-gray-400">Nenhum cliente encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = clientes.map(c => `
+    <tr class="hover:bg-gray-50">
+      <td class="px-4 py-3 text-gray-400">${c.id}</td>
+      <td class="px-4 py-3 text-gray-500">${new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
+      <td class="px-4 py-3 font-medium text-gray-800">${esc(c.nome)}</td>
+      <td class="px-4 py-3 text-gray-500">${c.tipo_pessoa === 'juridica' ? 'PJ' : c.tipo_pessoa === 'fisica' ? 'PF' : '—'}</td>
+      <td class="px-4 py-3 text-gray-500">${esc(c.razao_social || '—')}</td>
+      <td class="px-4 py-3 text-gray-500">${esc(c.email)}</td>
+      <td class="px-4 py-3 text-gray-500">${esc(c.telefone || '—')}</td>
+      <td class="px-4 py-3 text-gray-500">${esc(c.cidade || '—')}</td>
+      <td class="px-4 py-3 text-gray-500">${esc(c.estado || '—')}</td>
+      <td class="px-4 py-3"><button onclick="abrirFichaCliente(${c.id})" class="text-xs text-primary font-semibold hover:underline">Ver Ficha</button></td>
+    </tr>
+  `).join('');
+}
+
+async function abrirFichaCliente(id) {
+  try {
+    const c = await apiFetch(_B() + '/api/admin/clientes/' + id);
+    document.getElementById('cli-id').value = c.id;
+    document.getElementById('cli-nome').value = c.nome || '';
+    document.getElementById('cli-tipo-pessoa').value = c.tipo_pessoa || '';
+    document.getElementById('cli-documento').value = c.documento || '';
+    document.getElementById('cli-razao-social').value = c.razao_social || '';
+    document.getElementById('cli-inscricao-estadual').value = c.inscricao_estadual || '';
+    document.getElementById('cli-telefone').value = c.telefone || '';
+    document.getElementById('cli-cep').value = c.cep || '';
+    document.getElementById('cli-endereco').value = c.endereco || '';
+    document.getElementById('cli-numero').value = c.numero || '';
+    document.getElementById('cli-bairro').value = c.bairro || '';
+    document.getElementById('cli-cidade').value = c.cidade || '';
+    document.getElementById('cli-estado').value = c.estado || '';
+    document.getElementById('cli-observacao').value = c.observacao_admin || '';
+    const acesso = c.certificado_acesso || 'ambos';
+    document.querySelectorAll('input[name="cli-certificado-acesso"]').forEach(r => r.checked = (r.value === acesso));
+    document.getElementById('cli-erro').classList.add('hidden');
+    document.getElementById('modal-cliente').classList.remove('hidden');
+  } catch (e) {
+    alert('Erro ao carregar ficha do cliente: ' + e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const formCliente = document.getElementById('form-cliente');
+  if (formCliente) {
+    formCliente.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('cli-erro');
+      err.classList.add('hidden');
+
+      const docVal = document.getElementById('cli-documento').value.trim();
+      if (docVal && !documentoValido(docVal)) {
+        err.textContent = 'CPF ou CNPJ inválido — confira a quantidade de dígitos.';
+        err.classList.remove('hidden');
+        return;
+      }
+      const telVal = document.getElementById('cli-telefone').value.trim();
+      if (telVal && !telefoneValido(telVal)) {
+        err.textContent = 'Telefone inválido — confira o DDD e a quantidade de dígitos.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('btn-salvar-cliente');
+      btn.disabled = true;
+
+      const id = document.getElementById('cli-id').value;
+      const body = {
+        nome: document.getElementById('cli-nome').value,
+        tipo_pessoa: document.getElementById('cli-tipo-pessoa').value,
+        documento: docVal,
+        razao_social: document.getElementById('cli-razao-social').value,
+        inscricao_estadual: document.getElementById('cli-inscricao-estadual').value,
+        telefone: telVal,
+        cep: document.getElementById('cli-cep').value,
+        endereco: document.getElementById('cli-endereco').value,
+        numero: document.getElementById('cli-numero').value,
+        bairro: document.getElementById('cli-bairro').value,
+        cidade: document.getElementById('cli-cidade').value,
+        estado: document.getElementById('cli-estado').value,
+        observacao_admin: document.getElementById('cli-observacao').value,
+        certificado_acesso: document.querySelector('input[name="cli-certificado-acesso"]:checked')?.value || 'ambos',
+      };
+
+      try {
+        await apiPut(_B() + '/api/admin/clientes/' + id, body);
+        document.getElementById('modal-cliente').classList.add('hidden');
+        carregarClientesAdmin();
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.remove('hidden');
+      } finally { btn.disabled = false; }
+    });
+  }
+});
+
+// ============ PEDIDOS ADMIN (Comercial) ============
+var _pedidosAdminRaw = [];
+var _pedidosAdminSortCampo = null;
+var _pedidosAdminSortDir = 'desc';
+
+const SITUACAO_LABEL = { pendente: 'Aguardando Pgto', pago: 'Pago', cancelado: 'Cancelado' };
+const FORMA_PGTO_LABEL = { pix: 'PIX', boleto: 'Boleto', cartao: 'Cartão de Crédito' };
+
+async function carregarPedidosAdmin() {
+  const tbody = document.getElementById('pedidos-tbody');
+  try {
+    _pedidosAdminRaw = await apiFetch(_B() + '/api/admin/pedidos');
+    renderPedidosAdminTable(_pedidosAdminRaw);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+function ordenarPedidosAdmin(campo) {
+  _pedidosAdminSortDir = (_pedidosAdminSortCampo === campo && _pedidosAdminSortDir === 'asc') ? 'desc' : 'asc';
+  _pedidosAdminSortCampo = campo;
+  renderPedidosAdminTable(ordenarLista(_pedidosAdminRaw, campo, _pedidosAdminSortDir));
+}
+
+function renderPedidosAdminTable(pedidos) {
+  const tbody = document.getElementById('pedidos-tbody');
+  if (!pedidos.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">Nenhum pedido encontrado.</td></tr>';
+    return;
+  }
+  const statusCor = { pendente: 'bg-amber-100 text-amber-700', pago: 'bg-green-100 text-green-700', cancelado: 'bg-red-100 text-red-700' };
+  tbody.innerHTML = pedidos.map(p => `
+    <tr class="hover:bg-gray-50 cursor-pointer" onclick="abrirDetalhePedido(${p.id})">
+      <td class="px-4 py-3 text-gray-400">#${p.id}</td>
+      <td class="px-4 py-3 text-gray-500">${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
+      <td class="px-4 py-3 font-medium text-gray-800">${esc(p.nome_cliente)}</td>
+      <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusCor[p.situacao] || 'bg-gray-100 text-gray-500'}">${SITUACAO_LABEL[p.situacao] || p.situacao}</span></td>
+      <td class="px-4 py-3 text-gray-500">${FORMA_PGTO_LABEL[p.forma_pagamento] || p.forma_pagamento || '—'}</td>
+      <td class="px-4 py-3 text-gray-500">${esc(p.cupom_codigo || '—')}</td>
+      <td class="px-4 py-3 text-right text-gray-500">${Number(p.desconto).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+      <td class="px-4 py-3 text-right font-semibold text-gray-800">R$ ${Number(p.total_liquido).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+      <td class="px-4 py-3 text-gray-400 text-xs">${esc(p.asaas_id || '—')}</td>
+    </tr>
+  `).join('');
+}
+
+async function abrirDetalhePedido(id) {
+  document.getElementById('ped-id-titulo').textContent = '#' + id;
+  document.getElementById('pedido-detalhe-body').innerHTML = 'Carregando...';
+  document.getElementById('modal-pedido').classList.remove('hidden');
+  try {
+    const p = await apiFetch(_B() + '/api/admin/pedidos/' + id);
+    const itensHtml = p.itens.map(it => `
+      <tr>
+        <td class="px-3 py-2">${esc(it.produto)}</td>
+        <td class="px-3 py-2 text-gray-500">${it.prazo_acesso_dias ? it.prazo_acesso_dias + ' dias' : '—'}</td>
+        <td class="px-3 py-2 text-right">R$ ${Number(it.preco_unitario).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+        <td class="px-3 py-2 text-center">${it.vagas}</td>
+        <td class="px-3 py-2 text-right">R$ ${Number(it.preco_total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+        <td class="px-3 py-2 text-center">${it.percentual_desconto}%</td>
+        <td class="px-3 py-2 text-right font-semibold">R$ ${Number(it.liquido_pago).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('pedido-detalhe-body').innerHTML = `
+      <div class="grid grid-cols-2 gap-4 mb-5 text-xs">
+        <div><span class="text-gray-400 uppercase font-semibold">Cliente</span><br>${esc(p.nome_cliente)} — ${esc(p.usuario_email)}</div>
+        <div><span class="text-gray-400 uppercase font-semibold">Status</span><br>${SITUACAO_LABEL[p.situacao] || p.situacao}</div>
+        <div><span class="text-gray-400 uppercase font-semibold">Forma de Pagamento</span><br>${FORMA_PGTO_LABEL[p.forma_pagamento] || p.forma_pagamento || '—'}</div>
+        <div><span class="text-gray-400 uppercase font-semibold">Cupom</span><br>${esc(p.cupom_codigo || '—')}</div>
+        <div><span class="text-gray-400 uppercase font-semibold">Transação Asaas</span><br>${esc(p.asaas_id || '—')}</div>
+        <div><span class="text-gray-400 uppercase font-semibold">Total Pago</span><br><span class="text-base font-bold text-gray-800">R$ ${Number(p.total_liquido).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>
+      </div>
+      <table class="w-full text-xs border border-gray-100 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50 text-gray-500">
+          <tr>
+            <th class="px-3 py-2 text-left">Produto</th>
+            <th class="px-3 py-2 text-left">Prazo Acesso</th>
+            <th class="px-3 py-2 text-right">Preço Unit.</th>
+            <th class="px-3 py-2 text-center">Qde</th>
+            <th class="px-3 py-2 text-right">Preço Total</th>
+            <th class="px-3 py-2 text-center">% Desc.</th>
+            <th class="px-3 py-2 text-right">Líquido Pago</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">${itensHtml}</tbody>
+      </table>
+    `;
+  } catch (e) {
+    document.getElementById('pedido-detalhe-body').innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`;
+  }
+}
+
+// ============ ALUNOS ADMIN (visão completa, editável) ============
+var _alunosAdminRaw = [];
+var _alunosAdminSortCampo = null;
+var _alunosAdminSortDir = 'asc';
+
+async function carregarAlunosAdmin() {
+  const tbody = document.getElementById('alunos-admin-tbody');
+  try {
+    _alunosAdminRaw = await apiFetch(_B() + '/api/admin/alunos');
+    renderAlunosAdminTable(_alunosAdminRaw);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+function filtrarAlunosAdmin() {
+  const q = (document.getElementById('alunos-admin-busca')?.value || '').toLowerCase().trim();
+  let lista = !q ? _alunosAdminRaw : _alunosAdminRaw.filter(a =>
+    (a.aluno_nome || '').toLowerCase().includes(q) ||
+    (a.aluno_email || '').toLowerCase().includes(q) ||
+    (a.curso_titulo || '').toLowerCase().includes(q)
+  );
+  if (_alunosAdminSortCampo) lista = ordenarLista(lista, _alunosAdminSortCampo, _alunosAdminSortDir);
+  renderAlunosAdminTable(lista);
+}
+
+function ordenarAlunosAdmin(campo) {
+  _alunosAdminSortDir = (_alunosAdminSortCampo === campo && _alunosAdminSortDir === 'asc') ? 'desc' : 'asc';
+  _alunosAdminSortCampo = campo;
+  filtrarAlunosAdmin();
+}
+
+function renderAlunosAdminTable(linhas) {
+  const tbody = document.getElementById('alunos-admin-tbody');
+  if (!linhas.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">Nenhum aluno encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = linhas.map(row => {
+    const prog = Math.round(row.progresso_total || 0);
+    const dataFim = row.data_fim_acesso ? new Date(row.data_fim_acesso) : null;
+    const isExpired = dataFim && dataFim < new Date();
+
+    let statusHtml;
+    if (isExpired && !parseInt(row.concluido)) {
+      statusHtml = `<span class="inline-block text-[10px] bg-red-50 text-red-600 border border-red-200 font-bold px-2 py-0.5 rounded-md uppercase">${prog}% - Prazo Vencido</span>`;
+    } else if (parseInt(row.concluido)) {
+      statusHtml = row.exam_aprovado === 1
+        ? `<span class="inline-block text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-md uppercase">Aprovado</span>`
+        : row.exam_aprovado === 0
+          ? `<span class="inline-block text-[10px] bg-red-50 text-red-700 border border-red-200 font-bold px-2 py-0.5 rounded-md uppercase">Reprovado</span>`
+          : `<span class="inline-block text-[10px] bg-green-50 text-green-700 border border-green-200 font-bold px-2 py-0.5 rounded-md uppercase">Concluído</span>`;
+    } else if (prog > 0) {
+      statusHtml = `<span class="inline-block text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-md uppercase">Em Andamento</span>`;
+    } else {
+      statusHtml = `<span class="inline-block text-[10px] bg-gray-50 text-gray-400 border border-gray-200 font-bold px-2 py-0.5 rounded-md uppercase">Não Iniciou</span>`;
+    }
+
+    return `
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-medium text-gray-800">${esc(row.aluno_nome)}</td>
+        <td class="px-4 py-3 text-gray-500">${esc(row.cliente || '—')}</td>
+        <td class="px-4 py-3 text-gray-400 text-xs">${esc(row.aluno_email)}</td>
+        <td class="px-4 py-3 text-gray-600 max-w-xs truncate">${esc(row.curso_titulo)}</td>
+        <td class="px-4 py-3">${statusHtml}</td>
+        <td class="px-4 py-3">
+          <button onclick="editarPrazoAlunoAdmin(${row.matricula_id}, '${row.data_fim_acesso || ''}')" class="text-xs text-primary hover:underline">
+            ${dataFim ? dataFim.toLocaleDateString('pt-BR') : 'Definir'}
+          </button>
+        </td>
+        <td class="px-4 py-3 text-gray-500 text-xs">${row.data_inicio ? new Date(row.data_inicio).toLocaleDateString('pt-BR') : '—'}</td>
+        <td class="px-4 py-3 text-gray-500 text-xs">${row.data_conclusao ? new Date(row.data_conclusao).toLocaleDateString('pt-BR') : '—'}</td>
+        <td class="px-4 py-3">
+          ${parseInt(row.concluido)
+            ? `<a href="${_B()}/certificado?curso=${row.curso_id}&aluno_id=${row.aluno_id}" target="_blank" class="text-xs text-secondary font-bold hover:underline">Ver PDF</a>`
+            : `<span class="text-xs text-gray-400">Pendente</span>`
+          }
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function editarPrazoAlunoAdmin(matriculaId, dataAtual) {
+  const atual = dataAtual ? dataAtual.slice(0, 10) : '';
+  const novaData = prompt('Nova data de término de acesso (AAAA-MM-DD):', atual);
+  if (novaData === null) return;
+  try {
+    await apiPut(_B() + '/api/admin/alunos/' + matriculaId, { data_fim_acesso: novaData });
+    carregarAlunosAdmin();
+  } catch (e) {
+    alert('Erro ao atualizar prazo: ' + e.message);
+  }
 }

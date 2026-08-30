@@ -53,7 +53,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=5"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarCategoriasAdmin);
 </script>

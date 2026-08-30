@@ -58,13 +58,13 @@
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">CPF ou CNPJ</label>
-              <input type="text" id="reg-documento"
+              <input type="text" id="reg-documento" data-mask="documento" maxlength="18"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="000.000.000-00">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp / Celular</label>
-              <input type="text" id="reg-telefone"
+              <input type="text" id="reg-telefone" data-mask="telefone" maxlength="15"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="(11) 99999-9999">
             </div>
@@ -181,11 +181,27 @@
 
   document.getElementById('registro-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = document.getElementById('reg-btn');
     const err = document.getElementById('reg-error');
+    err.classList.add('hidden');
+
+    const docVal = getValue('reg-documento');
+    if (docVal && !documentoValido(docVal)) {
+      err.textContent = 'CPF ou CNPJ inválido — confira a quantidade de dígitos.';
+      err.classList.remove('hidden');
+      document.getElementById('reg-documento').focus();
+      return;
+    }
+    const telVal = getValue('reg-telefone');
+    if (telVal && !telefoneValido(telVal)) {
+      err.textContent = 'Telefone inválido — confira o DDD e a quantidade de dígitos.';
+      err.classList.remove('hidden');
+      document.getElementById('reg-telefone').focus();
+      return;
+    }
+
+    const btn = document.getElementById('reg-btn');
     btn.disabled = true;
     btn.textContent = 'Criando conta...';
-    err.classList.add('hidden');
 
     const payload = {
       nome: getValue('reg-nome'),

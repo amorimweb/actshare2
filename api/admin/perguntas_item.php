@@ -15,8 +15,6 @@ if ($method === 'PUT') {
     $texto         = trim($body['texto'] ?? '');
     $imagemUrl     = trim($body['imagem_url'] ?? '') ?: null;
     $justificativa = trim($body['justificativa'] ?? '');
-    $cursoId       = isset($body['curso_id']) && $body['curso_id'] !== '' ? (int)$body['curso_id'] : null;
-    $moduloId      = isset($body['modulo_id']) && $body['modulo_id'] !== '' ? (int)$body['modulo_id'] : null;
     $aulaId        = isset($body['aula_id']) && $body['aula_id'] !== '' ? (int)$body['aula_id'] : null;
     $opcoes        = $body['opcoes'] ?? [];
 
@@ -35,6 +33,16 @@ if ($method === 'PUT') {
     if (count($opcoes) > 5) {
         jsonError('A pergunta pode ter no máximo 5 alternativas.', 400);
     }
+
+    // curso_id/modulo_id sempre derivados da aula no servidor (ver perguntas.php)
+    $stmtAula = $db->prepare('SELECT m.curso_id, a.modulo_id FROM aulas a JOIN modulos m ON m.id = a.modulo_id WHERE a.id = ?');
+    $stmtAula->execute([$aulaId]);
+    $aulaInfo = $stmtAula->fetch();
+    if (!$aulaInfo) {
+        jsonError('Aula não encontrada.', 400);
+    }
+    $cursoId  = (int)$aulaInfo['curso_id'];
+    $moduloId = (int)$aulaInfo['modulo_id'];
 
     // Verifica existência da pergunta
     $stmt = $db->prepare('SELECT id FROM perguntas WHERE id = ? LIMIT 1');

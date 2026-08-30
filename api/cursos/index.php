@@ -33,9 +33,22 @@ if ($method === 'GET') {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
+    // Exames Exemplar Global ativos, agrupados por curso
+    $examesPorCurso = [];
+    if ($rows) {
+        $ids = array_column($rows, 'id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmtEx = $db->prepare("SELECT curso_id, tipo, preco FROM exames_curso WHERE ativo = 1 AND curso_id IN ($placeholders)");
+        $stmtEx->execute($ids);
+        foreach ($stmtEx->fetchAll() as $ex) {
+            $examesPorCurso[$ex['curso_id']][] = ['tipo' => $ex['tipo'], 'preco' => $ex['preco']];
+        }
+    }
+
     $result = array_map(fn($r) => array_merge($r, [
         'categoria' => $r['categoria_nome'] ? ['nome' => $r['categoria_nome'], 'slug' => $r['categoria_slug']] : null,
         'instrutor' => $r['instrutor_nome']  ? ['nome' => $r['instrutor_nome']]  : null,
+        'exames'    => $examesPorCurso[$r['id']] ?? [],
     ]), $rows);
 
     jsonOk($result);

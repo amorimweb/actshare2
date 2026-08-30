@@ -68,22 +68,15 @@ if ($showCourseNav) try {
         <span class="text-primary font-bold text-lg hidden sm:block">ActShare</span>
       </a>
 
-      <!-- Nav desktop (Wrapper para centralizar) -->
+      <!-- Nav desktop (Wrapper para centralizar) — menu único, sempre visível -->
       <div class="hidden md:flex flex-1 justify-center items-center">
-        <!-- Nav desktop (Público) -->
-        <nav class="hidden md:flex items-center gap-6" id="nav-public">
-          <a href="<?= BASE_PATH ?>/cursos" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">TREINAMENTOS</a>
-          <a href="<?= BASE_PATH ?>/treinamentos/abertos" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">TREINAMENTOS ABERTOS</a>
-          <a href="<?= BASE_PATH ?>/treinamentos/gravados" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">GRAVADOS</a>
-        </nav>
-
-        <!-- Nav desktop (Aluno Logado) -->
-        <nav class="hidden md:flex items-center gap-6" id="nav-aluno">
+        <nav class="flex items-center gap-6">
+          <a href="<?= BASE_PATH ?>/" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">HOME</a>
+          <a href="<?= BASE_PATH ?>/treinamentos/gravados" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">TREINAMENTOS GRAVADOS</a>
+          <a href="https://actshare.com.br/tabertosead-2/" target="_blank" rel="noopener" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">TREINAMENTOS ABERTOS</a>
           <a href="<?= BASE_PATH ?>/painel" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">ÁREA DO ALUNO</a>
           <a href="<?= BASE_PATH ?>/certificado" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">CERTIFICADO</a>
-          <a href="https://wa.me/5511999999999" target="_blank" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors flex items-center gap-1">
-            CONTATO
-          </a>
+          <a href="https://wa.me/5511999999999" target="_blank" class="text-sm font-medium text-gray-600 hover:text-primary transition-colors">CONTATO</a>
         </nav>
       </div>
 
@@ -229,20 +222,15 @@ if ($showCourseNav) try {
   <!-- Mobile menu -->
   <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white shadow-lg divide-y divide-gray-100">
 
-    <!-- Seção 1: Navegação principal (público) -->
-    <div id="mobile-nav-public">
+    <!-- Seção 1: Navegação principal — menu único, sempre visível -->
+    <div>
       <div class="px-5 pt-3 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Menu</div>
-      <a href="<?= BASE_PATH ?>/cursos"              class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">TREINAMENTOS</a>
-      <a href="<?= BASE_PATH ?>/treinamentos/abertos" class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">TREINAMENTOS ABERTOS</a>
+      <a href="<?= BASE_PATH ?>/"                      class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">HOME</a>
       <a href="<?= BASE_PATH ?>/treinamentos/gravados" class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">TREINAMENTOS GRAVADOS</a>
-    </div>
-
-    <!-- Seção 1: Navegação principal (aluno logado) -->
-    <div id="mobile-nav-aluno" class="hidden">
-      <div class="px-5 pt-3 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Menu</div>
+      <a href="https://actshare.com.br/tabertosead-2/" target="_blank" rel="noopener" class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">TREINAMENTOS ABERTOS</a>
       <a href="<?= BASE_PATH ?>/painel"      class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">ÁREA DO ALUNO</a>
       <a href="<?= BASE_PATH ?>/certificado" class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">CERTIFICADO</a>
-      <a href="https://wa.me/5511999999999" target="_blank" class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">FALE CONOSCO</a>
+      <a href="https://wa.me/5511999999999" target="_blank" class="flex items-center px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">CONTATO</a>
     </div>
 
     <!-- Seção 2: Categorias de cursos -->
@@ -312,3 +300,5 @@ document.addEventListener('click', (e) => {
 <div class="<?= $showCourseNav ? 'app-main-shell' : 'app-main-shell-simple' ?>">
 <script src="<?= BASE_PATH ?>/assets/js/auth.js?v=2"></script>
 <script src="<?= BASE_PATH ?>/assets/js/api.js?v=2"></script>
+<script src="<?= BASE_PATH ?>/assets/js/masks.js?v=1"></script>
+<script src="<?= BASE_PATH ?>/assets/js/sort-utils.js?v=1"></script>

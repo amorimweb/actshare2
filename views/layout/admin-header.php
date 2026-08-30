@@ -90,6 +90,11 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
         Cursos
       </a>
 
+      <a href="<?= BASE_PATH ?>/admin/alunos" class="sidebar-link <?= $adminPath === 'admin/alunos' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.083 12.083 0 0121 12c0 3.5-4.03 6.5-9 6.5s-9-3-9-6.5c0-.53.086-1.04.245-1.518L12 14z"/></svg>
+        Alunos
+      </a>
+
       <a href="<?= BASE_PATH ?>/admin/categorias" class="sidebar-link <?= $adminPath === 'admin/categorias' ? 'active' : '' ?>">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
         Categorias
@@ -110,7 +115,17 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
         Pesquisa de Satisfação
       </a>
 
-      <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Financeiro & Vendas</p>
+      <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comercial</p>
+
+      <a href="<?= BASE_PATH ?>/admin/pedidos" class="sidebar-link <?= $adminPath === 'admin/pedidos' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2v16z"/></svg>
+        Pedidos
+      </a>
+
+      <a href="<?= BASE_PATH ?>/admin/clientes" class="sidebar-link <?= $adminPath === 'admin/clientes' ? 'active' : '' ?>">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2M19 21H5m0 0H3m8-14h.01M11 11h.01M11 15h.01M15 7h.01M15 11h.01M15 15h.01"/></svg>
+        Clientes
+      </a>
 
       <a href="<?= BASE_PATH ?>/admin/cupons" class="sidebar-link <?= $adminPath === 'admin/cupons' ? 'active' : '' ?>">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
@@ -183,6 +198,8 @@ $adminPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 
 <script src="<?= BASE_PATH ?>/assets/js/auth.js?v=2"></script>
 <script src="<?= BASE_PATH ?>/assets/js/api.js?v=2"></script>
+<script src="<?= BASE_PATH ?>/assets/js/masks.js?v=1"></script>
+<script src="<?= BASE_PATH ?>/assets/js/sort-utils.js?v=1"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const user = authGetUser();

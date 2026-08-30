@@ -1,19 +1,26 @@
 <?php $pageTitle = 'Cursos Admin — ActShare'; ?>
 <?php require __DIR__ . '/../layout/admin-header.php'; ?>
 
-<div class="flex items-center justify-between mb-8">
+<div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
   <h1 class="text-2xl font-bold text-gray-800">Cursos</h1>
-  <button onclick="abrirModalNovoCurso()" class="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors">
-    + Novo Curso
-  </button>
+  <div class="flex items-center gap-3">
+    <div class="relative">
+      <input type="text" id="cursos-busca" oninput="filtrarCursosAdmin()" placeholder="Buscar por nome do curso..."
+        class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </div>
+    <button onclick="abrirModalNovoCurso()" class="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors shrink-0">
+      + Novo Curso
+    </button>
+  </div>
 </div>
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 text-left">
       <tr>
-        <th class="px-5 py-3 font-medium text-gray-600">Título</th>
-        <th class="px-5 py-3 font-medium text-gray-600">Categoria</th>
+        <th class="px-5 py-3 font-medium text-gray-600">Título <button type="button" onclick="ordenarCursosAdmin('titulo')" class="inline-flex items-center ml-1 align-middle text-gray-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button></th>
+        <th class="px-5 py-3 font-medium text-gray-600">Categoria <button type="button" onclick="ordenarCursosAdmin('categoria.nome')" class="inline-flex items-center ml-1 align-middle text-gray-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button></th>
         <th class="px-5 py-3 font-medium text-gray-600">Status</th>
         <th class="px-5 py-3 font-medium text-gray-600">Ações</th>
       </tr>
@@ -105,7 +112,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=5"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarCursosAdmin);
 </script>

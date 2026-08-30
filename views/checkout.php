@@ -31,13 +31,13 @@ require __DIR__ . '/layout/header.php';
 
           <div>
             <label for="bill-whatsapp" class="block text-xs font-semibold text-gray-500 uppercase mb-1">WhatsApp / Celular</label>
-            <input type="text" id="bill-whatsapp" placeholder="(11) 99999-9999" required
+            <input type="text" id="bill-whatsapp" data-mask="telefone" placeholder="(11) 99999-9999" required maxlength="15"
               class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow">
           </div>
 
           <div class="sm:col-span-2">
             <label for="bill-documento" class="block text-xs font-semibold text-gray-500 uppercase mb-1">CPF ou CNPJ</label>
-            <input type="text" id="bill-documento" placeholder="000.000.000-00 ou 00.000.000/0000-00" required
+            <input type="text" id="bill-documento" data-mask="documento" placeholder="000.000.000-00 ou 00.000.000/0000-00" required maxlength="18"
               class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow">
           </div>
         </form>
@@ -238,7 +238,7 @@ require __DIR__ . '/layout/header.php';
         <div class="flex justify-between items-start gap-2 text-xs">
           <div class="flex-1">
             <span class="font-semibold text-gray-800 line-clamp-1">${esc(item.titulo)}</span>
-            <span class="text-gray-400 block">${item.vagas} vaga(s) ${item.com_prova ? '+ Prova Certificação' : ''}</span>
+            <span class="text-gray-400 block">${item.vagas} vaga(s) ${item.exames_selecionados ? '+ Exame ' + item.exames_selecionados.replace(/,/g, '/') : ''}</span>
           </div>
           <span class="font-bold text-gray-700 text-right whitespace-nowrap">R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
         </div>
@@ -380,6 +380,18 @@ require __DIR__ . '/layout/header.php';
     if (!billingForm.reportValidity()) {
       return;
     }
+    const docInput = document.getElementById('bill-documento');
+    const telInput = document.getElementById('bill-whatsapp');
+    if (!documentoValido(docInput.value)) {
+      alert('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.');
+      docInput.focus();
+      return;
+    }
+    if (!telefoneValido(telInput.value)) {
+      alert('Informe um telefone válido, com DDD.');
+      telInput.focus();
+      return;
+    }
 
     // 2. Valida Cartão se for o selecionado
     if (formaPagamento === 'cartao') {
@@ -402,7 +414,7 @@ require __DIR__ . '/layout/header.php';
     const cart = getCarrinho();
     const itens = cart.map(item => item.combo_id
       ? { combo_id: parseInt(item.combo_id), vagas: parseInt(item.vagas) }
-      : { curso_id: parseInt(item.curso_id), vagas: parseInt(item.vagas), com_prova: parseInt(item.com_prova || 0) }
+      : { curso_id: parseInt(item.curso_id), vagas: parseInt(item.vagas), com_prova: parseInt(item.com_prova || 0), exames_selecionados: item.exames_selecionados || '' }
     );
 
     const cupomCodigo = cupomAtivo ? cupomAtivo.codigo : '';

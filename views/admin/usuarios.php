@@ -1,16 +1,28 @@
 <?php $pageTitle = 'Usuários Admin — ActShare'; ?>
 <?php require __DIR__ . '/../layout/admin-header.php'; ?>
 
-<h1 class="text-2xl font-bold text-gray-800 mb-8">Usuários</h1>
+<div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
+  <h1 class="text-2xl font-bold text-gray-800">Usuários</h1>
+  <div class="relative">
+    <input type="text" id="usuarios-busca" oninput="filtrarUsuariosAdmin()" placeholder="Buscar por nome ou e-mail..."
+      class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+  </div>
+</div>
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 text-left">
+      <?php
+      $seta = function ($campo) {
+          return '<button type="button" onclick="ordenarUsuariosAdmin(\'' . $campo . '\')" class="inline-flex items-center ml-1 align-middle text-gray-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button>';
+      };
+      ?>
       <tr>
-        <th class="px-5 py-3 font-medium text-gray-600">Nome</th>
-        <th class="px-5 py-3 font-medium text-gray-600">E-mail</th>
-        <th class="px-5 py-3 font-medium text-gray-600">Role</th>
-        <th class="px-5 py-3 font-medium text-gray-600">Cadastro</th>
+        <th class="px-5 py-3 font-medium text-gray-600">Nome <?= $seta('nome') ?></th>
+        <th class="px-5 py-3 font-medium text-gray-600">E-mail <?= $seta('email') ?></th>
+        <th class="px-5 py-3 font-medium text-gray-600">Perfil <?= $seta('role') ?></th>
+        <th class="px-5 py-3 font-medium text-gray-600">Cadastro <?= $seta('created_at') ?></th>
         <th class="px-5 py-3 font-medium text-gray-600">Status</th>
         <th class="px-5 py-3 font-medium text-gray-600">Ações</th>
       </tr>
@@ -40,11 +52,11 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">CPF / CNPJ</label>
-          <input type="text" id="ficha-documento" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <input type="text" id="ficha-documento" data-mask="documento" maxlength="18" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label>
-          <input type="text" id="ficha-telefone" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <input type="text" id="ficha-telefone" data-mask="telefone" maxlength="15" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Pessoa</label>
@@ -100,7 +112,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=5"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarUsuariosAdmin);
 </script>

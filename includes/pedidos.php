@@ -26,6 +26,17 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
     try {
         $db->prepare('UPDATE pedidos SET situacao = "pago" WHERE id = ?')->execute([$pedidoId]);
 
+        // PJ sempre vira Gestor ao comprar, mesmo comprando 1 única vaga
+        // (PF só vira Gestor quando compra 2+ vagas do mesmo produto — ver
+        // abaixo, no loop por item).
+        $stmt = $db->prepare('SELECT tipo_pessoa FROM usuarios WHERE id = ? LIMIT 1');
+        $stmt->execute([$pedido['usuario_id']]);
+        $compradorTipoPessoa = $stmt->fetchColumn();
+        if ($compradorTipoPessoa === 'juridica') {
+            $db->prepare('UPDATE usuarios SET role = "gestor" WHERE id = ? AND role = "aluno"')
+               ->execute([$pedido['usuario_id']]);
+        }
+
         $stmt = $db->prepare('SELECT * FROM itens_pedido WHERE pedido_id = ?');
         $stmt->execute([$pedidoId]);
         $itens = $stmt->fetchAll();
@@ -37,7 +48,7 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
                 $stmtCombo = $db->prepare('SELECT curso_id FROM combo_itens WHERE combo_id = ?');
                 $stmtCombo->execute([$item['combo_id']]);
                 foreach ($stmtCombo->fetchAll() as $ci) {
-                    $itensExpandidos[] = ['curso_id' => (int)$ci['curso_id'], 'vagas' => $item['vagas'], 'com_prova' => $item['com_prova']];
+                    $itensExpandidos[] = ['curso_id' => (int)$ci['curso_id'], 'vagas' => $item['vagas'], 'com_prova' => $item['com_prova'], 'exames_selecionados' => $item['exames_selecionados'] ?? null];
                 }
             } else {
                 $itensExpandidos[] = $item;
@@ -56,14 +67,15 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
 
             $dataFimAcesso = date('Y-m-d H:i:s', time() + ($prazoDias * 24 * 3600));
             $comProva = (int)$item['com_prova'];
+            $examesSel = $item['exames_selecionados'] ?? null;
 
             if ($vagas === 1) {
                 $stmtM = $db->prepare('
-                    INSERT INTO matriculas (aluno_id, curso_id, data_fim_acesso, vagas_usadas, vagas_totais, participante, com_prova)
-                    VALUES (?, ?, ?, 1, NULL, 0, ?)
-                    ON DUPLICATE KEY UPDATE data_fim_acesso = VALUES(data_fim_acesso), com_prova = VALUES(com_prova)
+                    INSERT INTO matriculas (aluno_id, curso_id, data_fim_acesso, vagas_usadas, vagas_totais, participante, com_prova, exames_selecionados)
+                    VALUES (?, ?, ?, 1, NULL, 0, ?, ?)
+                    ON DUPLICATE KEY UPDATE data_fim_acesso = VALUES(data_fim_acesso), com_prova = VALUES(com_prova), exames_selecionados = VALUES(exames_selecionados)
                 ');
-                $stmtM->execute([$pedido['usuario_id'], $cursoId, $dataFimAcesso, $comProva]);
+                $stmtM->execute([$pedido['usuario_id'], $cursoId, $dataFimAcesso, $comProva, $examesSel]);
 
                 // Cupom de indicação B2C — % e prazo configuráveis pelo admin
                 $caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -77,11 +89,11 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
                 $stmtR->execute([$pedido['usuario_id'], $codigoRef, (int)$config['cupom_indicacao_percentual'], $validadeCupom]);
             } else {
                 $stmtM = $db->prepare('
-                    INSERT INTO matriculas (aluno_id, curso_id, data_fim_acesso, vagas_usadas, vagas_totais, participante, com_prova)
-                    VALUES (?, ?, ?, 0, ?, 0, ?)
-                    ON DUPLICATE KEY UPDATE vagas_totais = VALUES(vagas_totais), data_fim_acesso = VALUES(data_fim_acesso), com_prova = VALUES(com_prova)
+                    INSERT INTO matriculas (aluno_id, curso_id, data_fim_acesso, vagas_usadas, vagas_totais, participante, com_prova, exames_selecionados)
+                    VALUES (?, ?, ?, 0, ?, 0, ?, ?)
+                    ON DUPLICATE KEY UPDATE vagas_totais = VALUES(vagas_totais), data_fim_acesso = VALUES(data_fim_acesso), com_prova = VALUES(com_prova), exames_selecionados = VALUES(exames_selecionados)
                 ');
-                $stmtM->execute([$pedido['usuario_id'], $cursoId, $dataFimAcesso, $vagas, $comProva]);
+                $stmtM->execute([$pedido['usuario_id'], $cursoId, $dataFimAcesso, $vagas, $comProva, $examesSel]);
 
                 $db->prepare('UPDATE usuarios SET role = "gestor" WHERE id = ? AND role = "aluno"')
                    ->execute([$pedido['usuario_id']]);

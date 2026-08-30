@@ -172,9 +172,9 @@ require __DIR__ . '/layout/header.php';
               <div class="mt-1 flex flex-wrap gap-1.5 items-center">
                 ${item.combo_id
                   ? `<span class="inline-block text-[9px] bg-secondary/10 text-secondary border border-secondary/30 rounded px-1.5 py-0.5 font-bold">Combo</span>`
-                  : (item.com_prova
-                      ? `<span class="inline-block text-[9px] bg-green-50 text-green-600 border border-green-150 rounded px-1.5 py-0.5 font-bold">Com Prova de Certificação</span>`
-                      : `<span class="inline-block text-[9px] bg-gray-50 text-gray-500 border border-gray-150 rounded px-1.5 py-0.5 font-bold">Sem Prova</span>`)
+                  : (item.exames_selecionados
+                      ? `<span class="inline-block text-[9px] bg-green-50 text-green-600 border border-green-150 rounded px-1.5 py-0.5 font-bold">Exame ${esc(item.exames_selecionados.replace(/,/g, '/'))}</span>`
+                      : `<span class="inline-block text-[9px] bg-gray-50 text-gray-500 border border-gray-150 rounded px-1.5 py-0.5 font-bold">Sem Exame</span>`)
                 }
                 ${b2bHtml}
               </div>

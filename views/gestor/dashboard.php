@@ -96,13 +96,18 @@ require __DIR__ . '/../layout/header.php';
           <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th class="px-6 py-4">Nome do Aluno</th>
-                <th class="px-6 py-4">Treinamento</th>
+                <?php $setaAluno = '<button type="button" onclick="ordenarAlunos(\'%s\')" class="inline-flex items-center ml-1 align-middle text-slate-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button>'; ?>
+                <th class="px-6 py-4">Nome <?= sprintf($setaAluno, 'aluno_nome') ?></th>
+                <th class="px-6 py-4">Login <?= sprintf($setaAluno, 'aluno_email') ?></th>
+                <th class="px-6 py-4">Treinamento <?= sprintf($setaAluno, 'curso_titulo') ?></th>
                 <th class="px-6 py-4 text-center">Status</th>
-                <th class="px-6 py-4 text-center">Progresso</th>
-                <th class="px-6 py-4">Prazos e Datas</th>
+                <th class="px-6 py-4 text-center">Progresso <?= sprintf($setaAluno, 'progresso') ?></th>
+                <th class="px-6 py-4">Início <?= sprintf($setaAluno, 'data_inicio') ?></th>
+                <th class="px-6 py-4">Término <?= sprintf($setaAluno, 'data_conclusao') ?></th>
+                <th class="px-6 py-4">Prazo <?= sprintf($setaAluno, 'data_fim') ?></th>
                 <th class="px-6 py-4 text-center">Certificado</th>
                 <th class="px-6 py-4 text-right">Avaliação</th>
+                <th class="px-6 py-4 text-right">Comprar+</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700" id="alunos-table-body"></tbody>
@@ -137,9 +142,10 @@ require __DIR__ . '/../layout/header.php';
           <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th class="px-6 py-4">Nome</th>
-                <th class="px-6 py-4">E-mail</th>
-                <th class="px-6 py-4">Data Cadastro</th>
+                <th class="px-6 py-4">Nome <button type="button" onclick="ordenarGestores('nome')" class="inline-flex items-center ml-1 align-middle text-slate-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button></th>
+                <th class="px-6 py-4">E-mail <button type="button" onclick="ordenarGestores('email')" class="inline-flex items-center ml-1 align-middle text-slate-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button></th>
+                <th class="px-6 py-4">Data Cadastro <button type="button" onclick="ordenarGestores('created_at')" class="inline-flex items-center ml-1 align-middle text-slate-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button></th>
+                <th class="px-6 py-4">Incluído por <button type="button" onclick="ordenarGestores('criado_por_nome')" class="inline-flex items-center ml-1 align-middle text-slate-400 hover:text-primary transition-colors" title="Ordenar"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3l4 5H6l4-5zM10 17l-4-5h8l-4 5z"/></svg></button></th>
                 <th class="px-6 py-4 text-right">Ações</th>
               </tr>
             </thead>
@@ -222,9 +228,8 @@ require __DIR__ . '/../layout/header.php';
     </button>
 
     <div class="mb-6">
-      <span class="text-[10px] font-bold text-secondary uppercase tracking-wider">Gestão de Participantes B2B</span>
+      <span class="text-[10px] font-bold text-secondary uppercase tracking-wider">Gestão de Participantes</span>
       <h3 id="modal-curso-titulo" class="font-extrabold text-slate-800 text-lg mt-0.5"></h3>
-      <p class="text-xs text-slate-400 mt-1" id="modal-vagas-info">Vagas: 0 / 0</p>
     </div>
 
     <!-- Seção: Você também é participante? -->
@@ -240,12 +245,12 @@ require __DIR__ . '/../layout/header.php';
 
     <!-- Formulário Inclusão -->
     <div id="container-form-aluno" class="mb-6">
-      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Inserir por E-mail</h4>
+      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Inserir e-mail do aluno a ser matriculado:</h4>
       <form id="form-alocar-aluno" onsubmit="alocarAlunoB2B(event)" class="flex gap-2">
         <input type="email" id="modal-email-input" required placeholder="Digite o e-mail do participante..."
           class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20">
         <button type="submit" id="btn-modal-incluir" class="bg-secondary hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded-xl transition-colors">
-          Alocar Vaga
+          MATRICULAR
         </button>
       </form>
       <div id="modal-aluno-alerta" class="hidden mt-2 p-3 text-xs rounded-xl border"></div>
@@ -253,7 +258,14 @@ require __DIR__ . '/../layout/header.php';
 
     <!-- Tabela Alunos Matriculados -->
     <div>
-      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" id="modal-matriculados-title">Participantes Matriculados (0)</h4>
+      <div class="flex items-center justify-between mb-2 gap-3">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <span id="modal-vagas-disponiveis">VAGAS DISPONÍVEIS: 0</span> &nbsp;·&nbsp; <span id="modal-matriculados-title">MATRICULADOS: 0</span>
+        </h4>
+        <button onclick="abrirModalInformarAlunos()" class="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider shrink-0">
+          Informar alunos por e-mail
+        </button>
+      </div>
       <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-y-auto shadow-inner bg-slate-50/50">
         <table class="min-w-full divide-y divide-slate-100 text-xs text-left">
           <thead class="bg-slate-50 text-slate-500 font-semibold">
@@ -270,6 +282,26 @@ require __DIR__ . '/../layout/header.php';
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2b. Modal Confirmação: Informar Alunos por E-mail -->
+<div id="modal-informar-alunos" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-scaleUp">
+    <h3 class="font-extrabold text-slate-800 text-lg mb-3">Informar alunos por e-mail</h3>
+    <p class="text-sm text-slate-500 mb-6">
+      Será enviado um e-mail para todos os alunos matriculados avisando sobre o início do curso.
+      Se você quer enviar estes e-mails agora, clique em <strong>Enviar</strong>.
+    </p>
+    <div id="informar-alunos-resultado" class="hidden mb-4 p-3 text-xs rounded-xl border"></div>
+    <div class="flex gap-3">
+      <button onclick="confirmarInformarAlunos()" id="btn-confirmar-informar" class="flex-1 bg-secondary hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-colors">
+        Enviar
+      </button>
+      <button onclick="document.getElementById('modal-informar-alunos').classList.add('hidden')" class="px-5 py-3 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl">
+        Cancelar
+      </button>
     </div>
   </div>
 </div>
@@ -477,6 +509,15 @@ require __DIR__ . '/../layout/header.php';
   let listTreinamentos = [];
   let listAlunos = [];
   let listGestores = [];
+  let gestoresSortCampo = null;
+  let gestoresSortDir = 'asc';
+
+  function ordenarGestores(campo) {
+    gestoresSortDir = (gestoresSortCampo === campo && gestoresSortDir === 'asc') ? 'desc' : 'asc';
+    gestoresSortCampo = campo;
+    listGestores = ordenarLista(listGestores, campo, gestoresSortDir);
+    renderGestoresTable();
+  }
   let selectedCursoId = 0;
 
   document.addEventListener('DOMContentLoaded', async () => {
@@ -696,7 +737,7 @@ require __DIR__ . '/../layout/header.php';
       const isExpired = dataFimVal && dataFimVal < new Date();
       
       if (isExpired && parseInt(row.concluido) === 0) {
-        statusHtml = `<span class="inline-block text-[9px] bg-red-50 text-red-600 border border-red-200 font-bold px-2 py-0.5 rounded-md uppercase">Prazo Vencido</span>`;
+        statusHtml = `<span class="inline-block text-[9px] bg-red-50 text-red-600 border border-red-200 font-bold px-2 py-0.5 rounded-md uppercase">${prog}% - Prazo Vencido</span>`;
       } else if (parseInt(row.concluido) === 1) {
         if (row.exam_aprovado === 1) {
           statusHtml = `<span class="inline-block text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-md uppercase">Aprovado (Exame)</span>`;
@@ -713,9 +754,11 @@ require __DIR__ . '/../layout/header.php';
 
       return `
         <tr class="hover:bg-slate-50/50">
-          <td class="px-6 py-4">
-            <div class="font-bold text-slate-800">${row.aluno_nome}</div>
-            <div class="text-[10px] text-slate-400">${row.aluno_email}</div>
+          <td class="px-6 py-4 font-bold text-slate-800">
+            ${row.aluno_nome}
+          </td>
+          <td class="px-6 py-4 text-[10px] text-slate-400">
+            ${row.aluno_email}
           </td>
           <td class="px-6 py-4 max-w-xs truncate font-medium text-slate-700">
             ${row.curso_titulo}
@@ -731,14 +774,12 @@ require __DIR__ . '/../layout/header.php';
               </div>
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-[10px] text-slate-500">
-            <div>Início: ${dataInicio}</div>
-            <div>Término: ${dataConclusao}</div>
-            <div class="text-orange-500 font-medium">Prazo: ${dataFimTxt}</div>
-          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-[10px] text-slate-500">${dataInicio}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[10px] text-slate-500">${dataConclusao}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[10px] text-orange-500 font-medium">${dataFimTxt}</td>
           <td class="px-6 py-4 text-center whitespace-nowrap">
             ${parseInt(row.concluido) === 1
-              ? `<a href="${BASE}/certificado?curso=${row.curso_id}&aluno_id=${row.aluno_id}" target="_blank" 
+              ? `<a href="${BASE}/certificado?curso=${row.curso_id}&aluno_id=${row.aluno_id}" target="_blank"
                    class="inline-flex items-center gap-1 text-[10px] text-secondary font-bold hover:underline">
                   <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/></svg>
                   Ver PDF
@@ -752,22 +793,37 @@ require __DIR__ . '/../layout/header.php';
               Ver Provas
             </button>
           </td>
+          <td class="px-6 py-4 text-right whitespace-nowrap">
+            <a href="${BASE}/cursos/${row.curso_id}" class="text-[10px] font-bold text-primary hover:underline">Comprar +</a>
+          </td>
         </tr>
       `;
     }).join('');
   }
 
+  let alunosSortCampo = null;
+  let alunosSortDir = 'asc';
+
   function filtrarAlunosDashboard() {
     const query = document.getElementById('search-alunos').value.toLowerCase().trim();
     if (!listAlunos) return;
-    
-    const filtrados = listAlunos.filter(row => 
-      row.aluno_nome.toLowerCase().includes(query) || 
-      row.aluno_email.toLowerCase().includes(query) || 
+
+    let filtrados = listAlunos.filter(row =>
+      row.aluno_nome.toLowerCase().includes(query) ||
+      row.aluno_email.toLowerCase().includes(query) ||
       row.curso_titulo.toLowerCase().includes(query)
     );
-    
+    if (alunosSortCampo) {
+      filtrados = ordenarLista(filtrados, alunosSortCampo, alunosSortDir);
+    }
+
     renderizarTabelaAlunos(filtrados);
+  }
+
+  function ordenarAlunos(campo) {
+    alunosSortDir = (alunosSortCampo === campo && alunosSortDir === 'asc') ? 'desc' : 'asc';
+    alunosSortCampo = campo;
+    filtrarAlunosDashboard();
   }
 
   // ========================================== TAB GESTORES ==========================================
@@ -782,18 +838,27 @@ require __DIR__ . '/../layout/header.php';
       
       // Filtra apenas usuários com role gestor
       listGestores = rawAlunos.filter(u => u.role === 'gestor');
-      
-      if (listGestores.length === 0) {
-        tableWrapper.classList.add('hidden');
-        empty.classList.remove('hidden');
-        return;
-      }
-      
-      empty.classList.add('hidden');
-      tableWrapper.classList.remove('hidden');
-      
-      const tbody = document.getElementById('gestores-table-body');
-      tbody.innerHTML = listGestores.map(g => {
+      renderGestoresTable();
+    } catch (err) {
+      loading.innerHTML = `<p class="text-red-500 py-8">Erro: ${err.message}</p>`;
+    }
+  }
+
+  function renderGestoresTable() {
+    const tableWrapper = document.getElementById('gestores-table-wrapper');
+    const empty = document.getElementById('gestores-empty');
+
+    if (listGestores.length === 0) {
+      tableWrapper.classList.add('hidden');
+      empty.classList.remove('hidden');
+      return;
+    }
+
+    empty.classList.add('hidden');
+    tableWrapper.classList.remove('hidden');
+
+    const tbody = document.getElementById('gestores-table-body');
+    tbody.innerHTML = listGestores.map(g => {
         const dtCadastro = new Date(g.created_at).toLocaleDateString('pt-BR');
         
         return `
@@ -807,6 +872,9 @@ require __DIR__ . '/../layout/header.php';
             <td class="px-6 py-4 text-slate-400">
               ${dtCadastro}
             </td>
+            <td class="px-6 py-4 text-slate-400">
+              ${g.criado_por_nome || '—'}
+            </td>
             <td class="px-6 py-4 text-right">
               <button onclick="removerGestor(${g.id})" class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">
                 Excluir
@@ -815,10 +883,6 @@ require __DIR__ . '/../layout/header.php';
           </tr>
         `;
       }).join('');
-      
-    } catch (err) {
-      loading.innerHTML = `<p class="text-red-500 py-8">Erro: ${err.message}</p>`;
-    }
   }
 
   async function removerGestor(id) {
@@ -911,7 +975,7 @@ require __DIR__ . '/../layout/header.php';
     if (!cursoObj) return;
 
     document.getElementById('modal-curso-titulo').textContent = cursoObj.curso_titulo;
-    document.getElementById('modal-vagas-info').textContent = `Vagas Utilizadas: ${cursoObj.vagas_usadas} / ${cursoObj.vagas_totais}`;
+    atualizarVagasDisponiveisModal(cursoObj);
 
     // Painel de autocadastro do gestor
     const isParticipante = parseInt(cursoObj.participante) === 1;
@@ -936,13 +1000,18 @@ require __DIR__ . '/../layout/header.php';
     document.getElementById('modal-incluir-aluno').classList.add('hidden');
   }
 
+  function atualizarVagasDisponiveisModal(cursoObj) {
+    const disponiveis = Math.max(0, parseInt(cursoObj.vagas_totais) - parseInt(cursoObj.vagas_usadas));
+    document.getElementById('modal-vagas-disponiveis').textContent = `VAGAS DISPONÍVEIS: ${disponiveis}`;
+  }
+
   async function atualizarListaParticipantesModal() {
     const tbody = document.getElementById('modal-matriculados-table-body');
     const title = document.getElementById('modal-matriculados-title');
-    
+
     try {
       const participantes = await apiFetch(BASE + `/api/master/cursos/${selectedCursoId}/participantes`);
-      title.textContent = `Participantes Matriculados (${participantes.length})`;
+      title.textContent = `MATRICULADOS: ${participantes.length}`;
 
       if (participantes.length === 0) {
         tbody.innerHTML = `
@@ -955,22 +1024,22 @@ require __DIR__ . '/../layout/header.php';
 
       tbody.innerHTML = participantes.map(p => {
         const prog = Math.round(p.progresso_total || 0);
-        // Pode remover apenas se o progresso for 0 e não for o próprio gestor
-        const canDelete = prog === 0 && !p.is_gestor_self;
+        // Remoção liberada sempre que o progresso é 0 — inclusive para o
+        // próprio gestor quando ele também é participante (antes ele nunca
+        // conseguia se auto-excluir, mesmo sem ter começado o curso).
+        const canDelete = prog === 0;
 
         return `
           <tr class="hover:bg-slate-50/50">
             <td class="px-4 py-2.5">
-              <div class="font-bold text-slate-800">${p.nome}</div>
+              <div class="font-bold text-slate-800">${p.nome}${p.is_gestor_self ? ' <span class="text-primary">(Você)</span>' : ''}</div>
               <div class="text-[10px] text-slate-400">${p.email}</div>
             </td>
             <td class="px-4 py-2.5 text-center font-bold text-slate-650">${prog}%</td>
             <td class="px-4 py-2.5 text-right whitespace-nowrap">
               ${canDelete
                 ? `<button onclick="removerAlunoB2B(${p.id})" class="text-red-500 hover:text-red-700 font-bold">Remover</button>`
-                : p.is_gestor_self
-                  ? `<span class="text-primary font-bold">Você</span>`
-                  : `<span class="text-slate-400 cursor-not-allowed" title="Aluno já iniciou o curso">Bloqueado</span>`
+                : `<span class="text-slate-400 cursor-not-allowed" title="Aluno já iniciou o curso">Bloqueado</span>`
               }
             </td>
           </tr>
@@ -1004,7 +1073,7 @@ require __DIR__ . '/../layout/header.php';
       
       // Atualiza modal
       const cursoObj = listTreinamentos.find(c => c.curso_id === selectedCursoId);
-      document.getElementById('modal-vagas-info').textContent = `Vagas Utilizadas: ${cursoObj.vagas_usadas} / ${cursoObj.vagas_totais}`;
+      atualizarVagasDisponiveisModal(cursoObj);
       
       await atualizarListaParticipantesModal();
 
@@ -1013,7 +1082,7 @@ require __DIR__ . '/../layout/header.php';
       alerta.textContent = err.message || 'Erro ao adicionar aluno.';
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Alocar Vaga';
+      btn.textContent = 'MATRICULAR';
     }
   }
 
@@ -1025,11 +1094,36 @@ require __DIR__ . '/../layout/header.php';
       
       // Atualiza modal
       const cursoObj = listTreinamentos.find(c => c.curso_id === selectedCursoId);
-      document.getElementById('modal-vagas-info').textContent = `Vagas Utilizadas: ${cursoObj.vagas_usadas} / ${cursoObj.vagas_totais}`;
+      atualizarVagasDisponiveisModal(cursoObj);
       
       await atualizarListaParticipantesModal();
     } catch(err) {
       alert(err.message || 'Erro ao remover aluno.');
+    }
+  }
+
+  function abrirModalInformarAlunos() {
+    document.getElementById('informar-alunos-resultado').classList.add('hidden');
+    document.getElementById('modal-informar-alunos').classList.remove('hidden');
+  }
+
+  async function confirmarInformarAlunos() {
+    const btn = document.getElementById('btn-confirmar-informar');
+    const resultado = document.getElementById('informar-alunos-resultado');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    resultado.classList.add('hidden');
+
+    try {
+      const res = await apiPost(BASE + `/api/master/cursos/${selectedCursoId}/informar-alunos`);
+      resultado.className = 'mb-4 p-3 text-xs rounded-xl border bg-green-50 border-green-200 text-green-700 block';
+      resultado.textContent = `E-mail enviado para ${res.enviados} de ${res.total} aluno(s) matriculado(s).`;
+    } catch (err) {
+      resultado.className = 'mb-4 p-3 text-xs rounded-xl border bg-red-50 border-red-200 text-red-700 block';
+      resultado.textContent = err.message || 'Erro ao enviar e-mails.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Enviar';
     }
   }
 
@@ -1046,7 +1140,7 @@ require __DIR__ . '/../layout/header.php';
       document.getElementById('modal-gestor-participa').classList.add('hidden');
       
       const cursoObj = listTreinamentos.find(c => c.curso_id === selectedCursoId);
-      document.getElementById('modal-vagas-info').textContent = `Vagas Utilizadas: ${cursoObj.vagas_usadas} / ${cursoObj.vagas_totais}`;
+      atualizarVagasDisponiveisModal(cursoObj);
 
       await atualizarListaParticipantesModal();
     } catch(err) {

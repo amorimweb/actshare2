@@ -166,7 +166,8 @@
     </div>
 
     <p class="text-xs text-slate-500 mb-2">Cole abaixo, uma pergunta por linha, separado por <code class="bg-slate-100 px-1 rounded">;</code> — exportado do Excel/Sheets como CSV. Formato de cada linha:</p>
-    <p class="text-[11px] font-mono bg-slate-50 border border-slate-200 rounded-lg p-2 mb-3 overflow-x-auto whitespace-nowrap">pergunta;justificativa;alt1;correta1(0/1);alt2;correta2;alt3;correta3;alt4;correta4;alt5;correta5</p>
+    <p class="text-[11px] font-mono bg-slate-50 border border-slate-200 rounded-lg p-2 mb-3 overflow-x-auto whitespace-nowrap">[Nro];pergunta;justificativa;alt1;correta1(0/1);alt2;correta2;alt3;correta3;alt4;correta4;alt5;correta5</p>
+    <p class="text-[10px] text-slate-400 -mt-2 mb-3">"Nro" é opcional — só para você numerar as perguntas na sua planilha e rastrear mais fácil; não é salvo no sistema.</p>
 
     <textarea id="csv-texto" rows="8" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="O que é um projeto?;Projeto é um esforço temporário;Um trabalho contínuo e repetitivo;0;Um esforço temporário com início e fim definidos;1;Um departamento da empresa;0"></textarea>
 
@@ -494,7 +495,12 @@
   }
 
   function parseLinhaCsv(linha) {
-    const campos = linha.split(';').map(c => c.trim());
+    let campos = linha.split(';').map(c => c.trim());
+    // Coluna opcional "Nro da Pergunta" no início (só numeração de apoio do
+    // Admin durante a preparação da planilha — não é gravada em lugar nenhum).
+    if (campos.length > 1 && /^\d+$/.test(campos[0])) {
+      campos = campos.slice(1);
+    }
     if (campos.length < 6) return null; // pergunta + justificativa + pelo menos 2 alternativas (4 campos)
 
     const [texto, justificativa, ...resto] = campos;

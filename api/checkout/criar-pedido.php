@@ -21,8 +21,14 @@ if (empty($itens)) {
 $db = getDB();
 $config = getConfiguracoes($db);
 
+$stmtTipo = $db->prepare('SELECT tipo_pessoa FROM usuarios WHERE id = ? LIMIT 1');
+$stmtTipo->execute([$user['id']]);
+$compradorEhPF = $stmtTipo->fetchColumn() !== 'juridica'; // padrão PF quando não informado
+
 $totalBruto = 0.00;
 $totalDesconto = 0.00;
+$totalVagasCursosPF = 0;  // soma de vagas de todos os cursos do pedido (regra PF: desconto pelo total, não por curso)
+$totalBrutoCursosPF = 0.0; // soma dos subtotais desses mesmos cursos, base sobre a qual o % de desconto PF incide
 $itensProcessados = [];
 
 // 1. Processar cada item do carrinho (curso avulso ou combo)
@@ -30,7 +36,7 @@ foreach ($itens as $item) {
     $comboId   = (int)($item['combo_id']   ?? 0);
     $cursoId   = (int)($item['curso_id']   ?? 0);
     $vagas     = (int)($item['vagas']      ?? 1);
-    $comProva  = (int)($item['com_prova']  ?? 0);
+    $examesTipos = array_filter(array_map('trim', explode(',', strtoupper($item['exames_selecionados'] ?? ''))));
 
     if ($vagas <= 0) $vagas = 1;
 
@@ -61,6 +67,7 @@ foreach ($itens as $item) {
             'vagas'          => $vagas,
             'preco_unitario' => $precoUnitario,
             'com_prova'      => 0,
+            'exames'         => '',
         ];
         continue;
     }
@@ -81,17 +88,31 @@ foreach ($itens as $item) {
     }
 
     $precoUnitario = (float)$curso['preco'];
-    if ($comProva === 1) {
-        $precoUnitario += 150.00;
+    $examesValidos = [];
+    if ($examesTipos) {
+        $placeholders = implode(',', array_fill(0, count($examesTipos), '?'));
+        $stmtEx = $db->prepare("SELECT tipo, preco FROM exames_curso WHERE curso_id = ? AND ativo = 1 AND tipo IN ($placeholders)");
+        $stmtEx->execute(array_merge([$cursoId], $examesTipos));
+        foreach ($stmtEx->fetchAll() as $ex) {
+            $examesValidos[] = $ex['tipo'];
+            $precoUnitario += (float)$ex['preco'];
+        }
     }
+    $comProva = $examesValidos ? 1 : 0;
     $subtotalItem = $precoUnitario * $vagas;
     $totalBruto += $subtotalItem;
 
-    // Aplica Desconto Progressivo por vagas (B2B) — faixas configuráveis pelo admin
-    $descontoProgPercentual = getDescontoProgressivoPercentual($config, $vagas);
-
-    if ($descontoProgPercentual > 0) {
-        $totalDesconto += $subtotalItem * ($descontoProgPercentual / 100);
+    if ($compradorEhPF) {
+        // PF: desconto progressivo calculado sobre o TOTAL de unidades do
+        // pedido (todos os cursos somados) — aplicado depois do loop.
+        $totalVagasCursosPF += $vagas;
+        $totalBrutoCursosPF += $subtotalItem;
+    } else {
+        // PJ: desconto progressivo por vagas do MESMO curso (regra já existente).
+        $descontoProgPercentual = getDescontoProgressivoPercentual($config, $vagas);
+        if ($descontoProgPercentual > 0) {
+            $totalDesconto += $subtotalItem * ($descontoProgPercentual / 100);
+        }
     }
 
     $itensProcessados[] = [
@@ -99,8 +120,18 @@ foreach ($itens as $item) {
         'curso_id'       => $cursoId,
         'vagas'          => $vagas,
         'preco_unitario' => $precoUnitario,
-        'com_prova'      => $comProva
+        'com_prova'      => $comProva,
+        'exames'         => implode(',', $examesValidos),
     ];
+}
+
+// 1b. PF: aplica o desconto progressivo uma única vez, sobre o total de
+// unidades/cursos do pedido inteiro (em vez de por curso, como no PJ).
+if ($compradorEhPF && $totalVagasCursosPF > 0) {
+    $descontoProgPercentualPF = getDescontoProgressivoPercentual($config, $totalVagasCursosPF);
+    if ($descontoProgPercentualPF > 0) {
+        $totalDesconto += $totalBrutoCursosPF * ($descontoProgPercentualPF / 100);
+    }
 }
 
 // 2. Desconto por Fidelidade (se ex-aluno com curso concluído)
@@ -152,18 +183,18 @@ $totalLiquido = max(0.00, $totalBruto - $totalDesconto);
 $db->beginTransaction();
 try {
     $stmt = $db->prepare('
-        INSERT INTO pedidos (usuario_id, total_bruto, desconto, total_liquido, cupom_id, situacao, asaas_id)
-        VALUES (?, ?, ?, ?, ?, "pendente", "simulado")
+        INSERT INTO pedidos (usuario_id, total_bruto, desconto, total_liquido, cupom_id, situacao, asaas_id, forma_pagamento)
+        VALUES (?, ?, ?, ?, ?, "pendente", "simulado", ?)
     ');
-    $stmt->execute([$user['id'], $totalBruto, $totalDesconto, $totalLiquido, $cupomId]);
+    $stmt->execute([$user['id'], $totalBruto, $totalDesconto, $totalLiquido, $cupomId, $formaPagamento]);
     $pedidoId = (int)$db->lastInsertId();
     
     $stmtItem = $db->prepare('
-        INSERT INTO itens_pedido (pedido_id, curso_id, combo_id, vagas, preco_unitario, com_prova)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO itens_pedido (pedido_id, curso_id, combo_id, vagas, preco_unitario, com_prova, exames_selecionados)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ');
     foreach ($itensProcessados as $it) {
-        $stmtItem->execute([$pedidoId, $it['curso_id'], $it['combo_id'], $it['vagas'], $it['preco_unitario'], $it['com_prova']]);
+        $stmtItem->execute([$pedidoId, $it['curso_id'], $it['combo_id'], $it['vagas'], $it['preco_unitario'], $it['com_prova'], $it['exames'] ?: null]);
     }
     
     // Se usou cupom comum, incrementa usos

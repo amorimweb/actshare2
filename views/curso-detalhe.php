@@ -28,29 +28,10 @@
       <img id="curso-thumb" src="" alt="" class="w-full rounded-lg mb-4 hidden">
       <div id="curso-preco" class="text-3xl font-bold text-primary mb-4"></div>
       
-      <!-- Opções com / sem Prova -->
+      <!-- Exame Exemplar Global (opcional, pode marcar mais de um) -->
       <div id="opcoes-prova-container" class="hidden space-y-2 mb-6 border-t border-gray-150 pt-4">
-        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Modalidade do Curso</span>
-        
-        <label class="flex items-center justify-between p-3 border-2 border-primary rounded-xl cursor-pointer bg-blue-50/50 transition-all text-left" id="label-sem-prova">
-          <div class="flex items-center gap-3">
-            <input type="radio" name="opt-prova" value="0" checked onchange="togglePrecoOpcao(0)" class="w-4 h-4 accent-primary">
-            <div>
-              <span class="text-xs font-bold text-gray-800 block">Sem Prova Final</span>
-              <span class="text-[10px] text-gray-400 block">Apenas Certificado de Participação</span>
-            </div>
-          </div>
-        </label>
-        
-        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all text-left" id="label-com-prova">
-          <div class="flex items-center gap-3">
-            <input type="radio" name="opt-prova" value="1" onchange="togglePrecoOpcao(1)" class="w-4 h-4 accent-primary">
-            <div>
-              <span class="text-xs font-bold text-gray-800 block">Com Prova Final (+ R$ 150)</span>
-              <span class="text-[10px] text-gray-400 block">Certificado de Sucesso Exemplar Global</span>
-            </div>
-          </div>
-        </label>
+        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Exame Exemplar Global (opcional)</span>
+        <div id="exames-opcoes-list" class="space-y-2"></div>
       </div>
 
       <button id="btn-matricular" onclick="matricular()"
@@ -167,8 +148,13 @@
     if (cursoData.preco > 0) {
       document.getElementById('btn-matricular').classList.add('hidden');
       document.getElementById('btn-adicionar-carrinho').classList.remove('hidden');
-      document.getElementById('opcoes-prova-container').classList.remove('hidden');
-      togglePrecoOpcao(0);
+      renderExamesOpcoes();
+      const examesPreSelecionados = (new URLSearchParams(location.search).get('exames') || '').split(',').filter(Boolean);
+      examesPreSelecionados.forEach(tipo => {
+        const cb = document.querySelector(`.exame-checkbox[value="${tipo}"]`);
+        if (cb) cb.checked = true;
+      });
+      atualizarPrecoComExames();
     } else {
       document.getElementById('btn-matricular').classList.remove('hidden');
       document.getElementById('btn-adicionar-carrinho').classList.add('hidden');
@@ -208,21 +194,37 @@
     el.classList.toggle('hidden');
   }
 
-  function togglePrecoOpcao(isComProva) {
-    const basePreco = parseFloat(cursoData.preco);
-    const precoFinal = isComProva ? (basePreco + 150.00) : basePreco;
-    document.getElementById('curso-preco').textContent = 'R$ ' + precoFinal.toFixed(2).replace('.', ',');
-    
-    const labelSem = document.getElementById('label-sem-prova');
-    const labelCom = document.getElementById('label-com-prova');
-    
-    if (isComProva) {
-      labelSem.className = "flex items-center justify-between p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all text-left";
-      labelCom.className = "flex items-center justify-between p-3 border-2 border-primary rounded-xl cursor-pointer bg-blue-50/50 transition-all text-left";
-    } else {
-      labelSem.className = "flex items-center justify-between p-3 border-2 border-primary rounded-xl cursor-pointer bg-blue-50/50 transition-all text-left";
-      labelCom.className = "flex items-center justify-between p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all text-left";
+  const EXAME_LABEL = { QM: 'Exame Exemplar Global QM', AU: 'Exame Exemplar Global AU', TL: 'Exame Exemplar Global TL' };
+
+  function renderExamesOpcoes() {
+    const container = document.getElementById('opcoes-prova-container');
+    const list = document.getElementById('exames-opcoes-list');
+    const exames = cursoData.exames || [];
+    if (!exames.length) {
+      container.classList.add('hidden');
+      return;
     }
+    container.classList.remove('hidden');
+    list.innerHTML = exames.map(ex => `
+      <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all text-left">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" value="${ex.tipo}" data-preco="${ex.preco}" onchange="atualizarPrecoComExames()" class="w-4 h-4 accent-primary exame-checkbox">
+          <span class="text-xs font-bold text-gray-800">${EXAME_LABEL[ex.tipo] || ex.tipo}</span>
+        </div>
+        <span class="text-xs text-gray-500">+ R$ ${parseFloat(ex.preco).toFixed(2).replace('.', ',')}</span>
+      </label>
+    `).join('');
+  }
+
+  function examesSelecionados() {
+    return [...document.querySelectorAll('.exame-checkbox:checked')].map(el => el.value);
+  }
+
+  function atualizarPrecoComExames() {
+    const basePreco = parseFloat(cursoData.preco);
+    let total = basePreco;
+    document.querySelectorAll('.exame-checkbox:checked').forEach(el => { total += parseFloat(el.dataset.preco); });
+    document.getElementById('curso-preco').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
   }
 
   async function verificarMatricula() {
@@ -274,12 +276,14 @@
       cart = [];
     }
     
-    const optRadio = document.querySelector('input[name="opt-prova"]:checked');
-    const comProva = optRadio ? parseInt(optRadio.value) : 0;
+    const exames = examesSelecionados();
+    const comProva = exames.length > 0 ? 1 : 0;
     const basePreco = parseFloat(cursoData.preco);
-    const precoFinal = comProva ? (basePreco + 150.00) : basePreco;
+    let precoFinal = basePreco;
+    document.querySelectorAll('.exame-checkbox:checked').forEach(el => { precoFinal += parseFloat(el.dataset.preco); });
+    const examesKey = exames.slice().sort().join(',');
 
-    const existingIndex = cart.findIndex(item => item.curso_id == cursoId && item.com_prova == comProva);
+    const existingIndex = cart.findIndex(item => item.curso_id == cursoId && (item.exames_selecionados || '') === examesKey);
     if (existingIndex > -1) {
       cart[existingIndex].vagas = (cart[existingIndex].vagas || 0) + 1;
     } else {
@@ -289,7 +293,8 @@
         preco: precoFinal,
         thumb_url: cursoData.thumb_url || '',
         vagas: 1,
-        com_prova: comProva
+        com_prova: comProva,
+        exames_selecionados: examesKey
       });
     }
     

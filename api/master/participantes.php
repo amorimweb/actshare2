@@ -113,8 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         if (!$aluno) {
             $defaultPassword = password_hash('actshare123', PASSWORD_DEFAULT);
-            $stmt = $db->prepare('INSERT INTO usuarios (nome, email, senha_hash, role) VALUES (?, ?, ?, "aluno")');
-            $stmt->execute(['Participante', $email, $defaultPassword]);
+            $stmt = $db->prepare('INSERT INTO usuarios (nome, email, senha_hash, role, criado_por_id) VALUES (?, ?, ?, "aluno", ?)');
+            $stmt->execute(['Participante', $email, $defaultPassword, $gestor['id']]);
             $alunoId = (int)$db->lastInsertId();
         } else {
             $alunoId = (int)$aluno['id'];
@@ -169,11 +169,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (!$alunoId) {
         jsonError('ID do aluno inválido.', 400);
     }
-    
-    // Gestor não pode excluir a si mesmo dessa forma
-    if ($alunoId === (int)$gestor['id']) {
-        jsonError('Operação não permitida.', 400);
-    }
+
+    // Esta rota só remove a MATRÍCULA (participação no curso), nunca o
+    // usuário — por isso o gestor também pode remover a própria participação
+    // aqui (sujeito à mesma regra de progresso zero de qualquer outro
+    // participante, validada abaixo).
 
     // 1. Busca matrícula do aluno
     $stmt = $db->prepare('SELECT id, progresso_total FROM matriculas WHERE aluno_id = ? AND curso_id = ? LIMIT 1');

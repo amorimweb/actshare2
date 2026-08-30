@@ -32,8 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db->beginTransaction();
     try {
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
-        $stmt = $db->prepare('INSERT INTO usuarios (nome, email, senha_hash, role) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$nome, $email, $hash, $role]);
+        $stmt = $db->prepare('INSERT INTO usuarios (nome, email, senha_hash, role, criado_por_id) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$nome, $email, $hash, $role, $gestor['id']]);
         $novoId = (int)$db->lastInsertId();
 
         $context = getGestorContext($gestor, $db);

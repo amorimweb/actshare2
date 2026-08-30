@@ -15,9 +15,10 @@ $org = ['id' => $orgId];
 
 // Busca membros da organização
 $stmt = $db->prepare('
-    SELECT u.id, u.nome, u.email, u.role, u.created_at
+    SELECT u.id, u.nome, u.email, u.role, u.created_at, uc.nome AS criado_por_nome
     FROM membros_organizacao mo
     JOIN usuarios u ON mo.usuario_id = u.id
+    LEFT JOIN usuarios uc ON uc.id = u.criado_por_id
     WHERE mo.organizacao_id = ?
     ORDER BY u.nome
 ');

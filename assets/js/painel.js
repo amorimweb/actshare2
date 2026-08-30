@@ -252,11 +252,15 @@ function renderizarPainel() {
           </div>
         </div>
 
-        <!-- Col 3: Botão de Ação (w-full em mobile, md:w-36 em desktop) -->
-        <div class="w-full md:w-36 flex-shrink-0">
+        <!-- Col 3: Botão(ões) de Ação (w-full em mobile, md:w-36 em desktop) -->
+        <div class="w-full md:w-36 flex-shrink-0 flex flex-col gap-2">
           <a href="${btnUrl}" class="w-full block text-center ${btnColorClass} text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-lg transition-all hover:shadow-md">
             ${btnText}
           </a>
+          ${parseInt(m.com_prova) === 1 && window._abaAtiva !== 'certificados'
+            ? `<a href="${_B()}/painel/curso/${m.curso_id}" class="w-full block text-center bg-primary hover:bg-blue-900 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-lg transition-all hover:shadow-md">Exame</a>`
+            : ''
+          }
         </div>
       </div>
     `;

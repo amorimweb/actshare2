@@ -47,25 +47,84 @@ function renderCardCombo(combo) {
 }
 
 function renderCardCurso(curso) {
+  const exames = curso.exames || [];
+  const examesMap = {};
+  exames.forEach(ex => { examesMap[ex.tipo] = parseFloat(ex.preco); });
+  const cardId = 'card-curso-' + curso.id;
+
+  const botoesExame = ['QM', 'AU', 'TL'].map(tipo => {
+    const disponivel = examesMap.hasOwnProperty(tipo);
+    return `<button type="button" onclick="toggleExameCard(event, '${cardId}', ${curso.id}, '${tipo}', ${disponivel})"
+        id="${cardId}-btn-${tipo}" data-preco="${examesMap[tipo] || 0}"
+        class="exame-card-btn text-[10px] font-bold uppercase px-2 py-1 rounded border transition-colors ${disponivel ? 'border-gray-200 text-gray-500 hover:border-primary hover:text-primary' : 'border-gray-100 text-gray-300 cursor-not-allowed'}">
+        ${tipo}
+      </button>`;
+  }).join('');
+
   return `
-    <a href="${_B()}/cursos/${curso.id}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      ${curso.thumb_url
-        ? `<img src="${curso.thumb_url}" alt="${esc(curso.titulo)}" class="w-full h-40 object-cover">`
-        : `<div class="w-full h-40 bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center">
-             <svg class="w-12 h-12 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-           </div>`
-      }
-      <div class="p-4 flex flex-col flex-1">
-        ${curso.categoria ? `<span class="text-xs text-secondary font-medium mb-1">${esc(curso.categoria.nome)}</span>` : ''}
-        <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2">${esc(curso.titulo)}</h3>
-        ${curso.descricao ? `<p class="text-xs text-gray-500 line-clamp-2 mb-3">${esc(curso.descricao)}</p>` : ''}
-        <div class="mt-auto flex items-center justify-between text-xs text-gray-400">
+    <div id="${cardId}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col" data-preco-base="${curso.preco}">
+      <a href="${_B()}/cursos/${curso.id}" id="${cardId}-link">
+        ${curso.thumb_url
+          ? `<img src="${curso.thumb_url}" alt="${esc(curso.titulo)}" class="w-full h-40 object-cover">`
+          : `<div class="w-full h-40 bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center">
+               <svg class="w-12 h-12 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+             </div>`
+        }
+        <div class="px-4 pt-4">
+          ${curso.categoria ? `<span class="text-xs text-secondary font-medium mb-1 block">${esc(curso.categoria.nome)}</span>` : ''}
+          <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2">${esc(curso.titulo)}</h3>
+          ${curso.descricao ? `<p class="text-xs text-gray-500 line-clamp-2 mb-3">${esc(curso.descricao)}</p>` : ''}
+        </div>
+      </a>
+      <div class="px-4 pb-4 mt-auto">
+        ${curso.preco > 0 ? `
+          <div class="flex items-center gap-1.5 mb-2">
+            <span class="text-[10px] font-bold uppercase px-2 py-1 rounded border border-primary bg-primary/5 text-primary">Treinamento</span>
+            ${botoesExame}
+          </div>
+        ` : ''}
+        <div class="flex items-center justify-between text-xs text-gray-400">
           <span>${curso.carga_horaria_horas || 0}h</span>
-          <span class="font-semibold text-primary">${curso.preco > 0 ? 'R$ ' + parseFloat(curso.preco).toFixed(2).replace('.', ',') : 'Gratuito'}</span>
+          <span class="font-semibold text-primary" id="${cardId}-preco">${curso.preco > 0 ? 'R$ ' + parseFloat(curso.preco).toFixed(2).replace('.', ',') : 'Gratuito'}</span>
         </div>
       </div>
-    </a>
+    </div>
   `;
+}
+
+function toggleExameCard(event, cardId, cursoId, tipo, disponivel) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (!disponivel) {
+    alert('Não há Exame Exemplar Global vinculado a este treinamento.');
+    return;
+  }
+
+  const btn = document.getElementById(`${cardId}-btn-${tipo}`);
+  const selecionado = btn.classList.toggle('bg-secondary');
+  btn.classList.toggle('text-white', selecionado);
+  btn.classList.toggle('border-secondary', selecionado);
+
+  // Recalcula preço exibido somando os exames selecionados
+  const card = document.getElementById(cardId);
+  const base = parseFloat(card.dataset.precoBase);
+  let total = base;
+  const selecionados = [];
+  card.querySelectorAll('.exame-card-btn.bg-secondary').forEach(b => {
+    const t = b.id.split('-btn-')[1];
+    selecionados.push(t);
+  });
+  // soma os preços reais lidos do atributo data-preco de cada botão (setado abaixo)
+  selecionados.forEach(t => {
+    const b = document.getElementById(`${cardId}-btn-${t}`);
+    total += parseFloat(b.dataset.preco || 0);
+  });
+  document.getElementById(`${cardId}-preco`).textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+  // Leva a seleção para a página de detalhe ao clicar no restante do card
+  const link = document.getElementById(`${cardId}-link`);
+  link.href = `${_B()}/cursos/${cursoId}` + (selecionados.length ? `?exames=${selecionados.join(',')}` : '');
 }
 
 async function carregarCursosDestaque(containerId, limite = 4) {

@@ -34,11 +34,11 @@ require __DIR__ . '/layout/header.php';
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">CPF ou CNPJ</label>
-            <input type="text" id="input-documento" placeholder="000.000.000-00" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none">
+            <input type="text" id="input-documento" data-mask="documento" maxlength="18" placeholder="000.000.000-00" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp / Celular</label>
-            <input type="text" id="input-telefone" placeholder="(11) 99999-9999" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none">
+            <input type="text" id="input-telefone" data-mask="telefone" maxlength="15" placeholder="(11) 99999-9999" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Tipo de pessoa</label>
@@ -143,6 +143,22 @@ require __DIR__ . '/layout/header.php';
     const alertEl = document.getElementById('alert-msg');
 
     alertEl.classList.add('hidden');
+
+    const docVal = document.getElementById('input-documento').value.trim();
+    if (docVal && !documentoValido(docVal)) {
+      alertEl.textContent = 'CPF ou CNPJ inválido — confira a quantidade de dígitos.';
+      alertEl.className = 'bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4';
+      alertEl.classList.remove('hidden');
+      return;
+    }
+    const telVal = document.getElementById('input-telefone').value.trim();
+    if (telVal && !telefoneValido(telVal)) {
+      alertEl.textContent = 'Telefone inválido — confira o DDD e a quantidade de dígitos.';
+      alertEl.className = 'bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4';
+      alertEl.classList.remove('hidden');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Salvando...';
 

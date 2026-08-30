@@ -20,6 +20,18 @@
     <p id="ca-descricao" class="text-gray-500 text-sm"></p>
   </div>
 
+  <!-- Exame Exemplar Global (QM/AU/TL) -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="font-semibold text-gray-700">Exame Exemplar Global</h2>
+        <p class="text-xs text-gray-400 mt-0.5">Ative os tipos de exame vendidos junto com este treinamento e defina o preço de cada um.</p>
+      </div>
+      <button onclick="salvarExamesCurso()" class="text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-blue-900">Salvar Exames</button>
+    </div>
+    <div id="exames-curso-list" class="grid sm:grid-cols-3 gap-4"></div>
+  </div>
+
   <!-- Módulos e aulas -->
   <div class="bg-white rounded-xl border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-5">
@@ -318,7 +330,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=5"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=7"></script>
 <script>
   const cursoAdminId = <?= (int)($_GET['id'] ?? 0) ?>;
   document.addEventListener('DOMContentLoaded', () => carregarCursoAdmin(cursoAdminId));
