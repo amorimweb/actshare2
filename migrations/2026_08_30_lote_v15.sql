@@ -1,5 +1,10 @@
 -- Lote V15 do novo ciclo de ajustes do cliente (EscopoV14_02/V14_04/V15_01)
 
+-- Garante que os textos acentuados deste arquivo sejam interpretados como
+-- UTF-8 nesta sessão, independente da configuração padrão do cliente mysql
+-- que rodar o import.
+SET NAMES utf8mb4;
+
 -- Corrige perguntas antigas com curso_id/modulo_id nulos (o filtro do Banco de
 -- Questões dependia dessas colunas estarem preenchidas; o código agora resolve
 -- sempre pela aula, mas isso já deixa o dado coerente também).

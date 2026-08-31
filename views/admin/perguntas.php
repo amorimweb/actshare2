@@ -194,6 +194,18 @@
 <script>
   let _cursosCache = [];
   let _perguntasList = [];
+  let _cursoDetalheCache = {};
+
+  // /api/cursos (lista) não traz módulos/aulas aninhados — só /api/cursos/:id
+  // traz. Os selects de Módulo/Aula (filtro, cadastro e CSV) precisam do
+  // detalhe do curso selecionado, buscado sob demanda e cacheado por id.
+  async function getCursoDetalhe(cursoId) {
+    if (!cursoId) return null;
+    if (_cursoDetalheCache[cursoId]) return _cursoDetalheCache[cursoId];
+    const curso = await apiFetch(BASE + '/api/cursos/' + cursoId);
+    _cursoDetalheCache[cursoId] = curso;
+    return curso;
+  }
 
   function esc(s) {
     if (!s) return '';
@@ -224,7 +236,7 @@
     }
   }
 
-  function carregarFiltroModulos() {
+  async function carregarFiltroModulos() {
     const cursoId = document.getElementById('filtro-curso').value;
     const selectMod = document.getElementById('filtro-modulo');
     selectMod.innerHTML = '<option value="">Todos os módulos</option>';
@@ -232,7 +244,7 @@
 
     if (!cursoId) return;
 
-    const curso = _cursosCache.find(c => c.id == cursoId);
+    const curso = await getCursoDetalhe(cursoId);
     if (curso && curso.modulos) {
       curso.modulos.forEach(m => {
         const opt = document.createElement('option');
@@ -243,7 +255,7 @@
     }
   }
 
-  function carregarFiltroAulas() {
+  async function carregarFiltroAulas() {
     const cursoId = document.getElementById('filtro-curso').value;
     const moduloId = document.getElementById('filtro-modulo').value;
     const selectAula = document.getElementById('filtro-aula');
@@ -251,7 +263,7 @@
 
     if (!cursoId || !moduloId) return;
 
-    const curso = _cursosCache.find(c => c.id == cursoId);
+    const curso = await getCursoDetalhe(cursoId);
     if (curso && curso.modulos) {
       const modulo = curso.modulos.find(m => m.id == moduloId);
       if (modulo && modulo.aulas) {
@@ -266,7 +278,7 @@
   }
 
   // Modals de cadastro
-  function carregarCadModulos(preselectModuloId = null) {
+  async function carregarCadModulos(preselectModuloId = null) {
     const cursoId = document.getElementById('cad-curso').value;
     const selectMod = document.getElementById('cad-modulo');
     selectMod.innerHTML = '<option value="">Selecione...</option>';
@@ -274,7 +286,7 @@
 
     if (!cursoId) return;
 
-    const curso = _cursosCache.find(c => c.id == cursoId);
+    const curso = await getCursoDetalhe(cursoId);
     if (curso && curso.modulos) {
       curso.modulos.forEach(m => {
         const opt = document.createElement('option');
@@ -286,7 +298,7 @@
     }
   }
 
-  function carregarCadAulas(preselectAulaId = null) {
+  async function carregarCadAulas(preselectAulaId = null) {
     const cursoId = document.getElementById('cad-curso').value;
     const moduloId = document.getElementById('cad-modulo').value;
     const selectAula = document.getElementById('cad-aula');
@@ -294,7 +306,7 @@
 
     if (!cursoId || !moduloId) return;
 
-    const curso = _cursosCache.find(c => c.id == cursoId);
+    const curso = await getCursoDetalhe(cursoId);
     if (curso && curso.modulos) {
       const modulo = curso.modulos.find(m => m.id == moduloId);
       if (modulo && modulo.aulas) {
@@ -420,7 +432,7 @@
     }, 200);
   }
 
-  function editarPerguntaAdmin(id) {
+  async function editarPerguntaAdmin(id) {
     const p = _perguntasList.find(item => item.id == id);
     if (!p) return;
 
@@ -430,9 +442,11 @@
     document.getElementById('pergunta-imagem').value = p.imagem_url || '';
     document.getElementById('pergunta-justificativa').value = p.justificativa || '';
 
-    document.getElementById('cad-curso').value = p.curso_id || '';
-    carregarCadModulos(p.modulo_id);
-    carregarCadAulas(p.aula_id);
+    // Usa o curso resolvido pelo backend (via aula_id), não a coluna
+    // perguntas.curso_id isolada, que pode estar desatualizada/nula.
+    document.getElementById('cad-curso').value = p.resolved_curso_id || p.curso_id || '';
+    await carregarCadModulos(p.resolved_modulo_id || p.modulo_id);
+    await carregarCadAulas(p.aula_id);
 
     const container = document.getElementById('alternativas-container');
     container.innerHTML = '';
@@ -475,21 +489,21 @@
     document.getElementById('modal-csv').classList.remove('hidden');
   }
 
-  function carregarCsvModulos() {
+  async function carregarCsvModulos() {
     const cursoId = document.getElementById('csv-curso').value;
     const selectMod = document.getElementById('csv-modulo');
     selectMod.innerHTML = '<option value="">Selecione...</option>';
     document.getElementById('csv-aula').innerHTML = '<option value="">Selecione...</option>';
-    const curso = _cursosCache.find(c => c.id == cursoId);
+    const curso = await getCursoDetalhe(cursoId);
     (curso?.modulos || []).forEach(m => selectMod.innerHTML += `<option value="${m.id}">${esc(m.titulo)}</option>`);
   }
 
-  function carregarCsvAulas() {
+  async function carregarCsvAulas() {
     const cursoId = document.getElementById('csv-curso').value;
     const moduloId = document.getElementById('csv-modulo').value;
     const selectAula = document.getElementById('csv-aula');
     selectAula.innerHTML = '<option value="">Selecione...</option>';
-    const curso = _cursosCache.find(c => c.id == cursoId);
+    const curso = await getCursoDetalhe(cursoId);
     const modulo = curso?.modulos?.find(m => m.id == moduloId);
     (modulo?.aulas || []).forEach(a => selectAula.innerHTML += `<option value="${a.id}">${(a.e_prova ? '[EXAME] ' : '') + esc(a.titulo)}</option>`);
   }

@@ -148,8 +148,8 @@ if ($showCourseNav) try {
           </a>
 
           <?php foreach ($courseNavGroups as $slug => $group): ?>
-            <div class="relative group">
-              <a href="<?= BASE_PATH ?>/cursos?categoria=<?= htmlspecialchars($slug) ?>" class="course-pill shrink-0 inline-flex items-center gap-1 uppercase rounded-md bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">
+            <div class="relative group" onmouseenter="posicionarCursoDropdown(this)">
+              <a href="<?= BASE_PATH ?>/cursos?categoria=<?= htmlspecialchars($slug) ?>" onfocus="posicionarCursoDropdown(this.closest('.group'))" class="course-pill shrink-0 inline-flex items-center gap-1 uppercase rounded-md bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">
                 <?php
                   // Nomes adaptados de acordo com o pedido
                   $label = $group['label'];
@@ -159,7 +159,7 @@ if ($showCourseNav) try {
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </a>
               <?php if (!empty($group['courses'])): ?>
-                <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 absolute left-0 top-full z-50 mt-2 w-72 rounded-lg border border-gray-100 bg-white shadow-xl transition-all">
+                <div class="course-dropdown-panel invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 fixed z-50 w-72 rounded-lg border border-gray-100 bg-white shadow-xl transition-all">
                   <div class="p-2">
                     <?php foreach ($group['courses'] as $course): ?>
                       <a href="<?= BASE_PATH ?>/cursos/<?= (int) $course['id'] ?>" class="block rounded-md px-3 py-2 uppercase text-xs font-medium leading-snug text-gray-600 hover:bg-blue-50 hover:text-primary transition-colors">
@@ -173,12 +173,12 @@ if ($showCourseNav) try {
           <?php endforeach; ?>
 
           <!-- Mais -->
-          <div class="relative group">
-            <button class="course-pill shrink-0 inline-flex items-center gap-1 uppercase rounded-md bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">
+          <div class="relative group" onmouseenter="posicionarCursoDropdown(this)">
+            <button onfocus="posicionarCursoDropdown(this.closest('.group'))" class="course-pill shrink-0 inline-flex items-center gap-1 uppercase rounded-md bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-primary transition-colors">
               Mais
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </button>
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border border-gray-100 bg-white shadow-xl transition-all">
+            <div class="course-dropdown-panel invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 fixed z-50 w-48 rounded-lg border border-gray-100 bg-white shadow-xl transition-all">
               <div class="p-2">
                 <a href="<?= BASE_PATH ?>/cursos?categoria=compliance" class="block rounded-md px-3 py-2 uppercase text-xs font-medium text-gray-600 hover:bg-blue-50 hover:text-primary transition-colors">Compliance</a>
                 <a href="<?= BASE_PATH ?>/cursos?categoria=tecnologia" class="block rounded-md px-3 py-2 uppercase text-xs font-medium text-gray-600 hover:bg-blue-50 hover:text-primary transition-colors">Tecnologia</a>
@@ -201,6 +201,22 @@ if ($showCourseNav) try {
   </div>
 
   <script>
+  // .course-strip usa overflow-x-auto pro scroll horizontal dos pills — mas
+  // isso força o overflow-y a virar "auto" também (regra do CSS: não dá pra
+  // ter só um eixo "visible"), o que cortava os dropdowns de categoria
+  // (position:absolute) verticalmente, mesmo com group-hover os tornando
+  // visíveis. Por isso os menus da segunda linha não abriam. Fix: os painéis
+  // usam position:fixed com coordenadas calculadas aqui, escapando do clip.
+  function posicionarCursoDropdown(groupEl) {
+    if (!groupEl) return;
+    const trigger = groupEl.querySelector('a, button');
+    const panel = groupEl.querySelector('.course-dropdown-panel');
+    if (!trigger || !panel) return;
+    const rect = trigger.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 8) + 'px';
+    panel.style.left = rect.left + 'px';
+  }
+
   function handleHeaderSearch(e) {
     if (e.key === 'Enter') {
       triggerHeaderSearch();
