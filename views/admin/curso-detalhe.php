@@ -128,7 +128,8 @@
 
       <div id="campo-url-bloco">
         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">URL do Vídeo / Link Documento</label>
-        <input type="url" id="aula-url" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        <input type="url" id="aula-url" placeholder="Link do JW Player, YouTube, Vimeo..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        <p class="text-[11px] text-gray-400 mt-1">Cole só o link (não o código &lt;script&gt; ou &lt;iframe&gt; inteiro). No JW Player, use o link que termina em <code class="bg-gray-100 px-1 rounded">.html</code>.</p>
       </div>
 
       <div>

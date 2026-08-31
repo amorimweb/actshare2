@@ -216,7 +216,7 @@ require __DIR__ . '/layout/header.php';
 </script>
 <script src="<?= BASE_PATH ?>/assets/js/proctoring.js?v=3"></script>
 <script src="<?= BASE_PATH ?>/assets/js/quiz.js?v=3"></script>
-<script src="<?= BASE_PATH ?>/assets/js/player.js?v=3"></script>
+<script src="<?= BASE_PATH ?>/assets/js/player.js?v=4"></script>
 <script>
   const cursoId = <?= (int)($_GET['id'] ?? 0) ?>;
   document.addEventListener('DOMContentLoaded', () => {

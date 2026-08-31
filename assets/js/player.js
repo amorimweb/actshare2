@@ -244,6 +244,12 @@ function abrirAula(aula) {
 }
 
 function converterUrlEmbed(url) {
+  // JW Player: aceita tanto o link do player (.html, o correto pro iframe)
+  // quanto o do script (.js) — e também extrai a URL sozinho caso alguém
+  // cole o snippet <script> ou <iframe> inteiro em vez do link puro.
+  const jwMatch = url.match(/cdn\.jwplayer\.com\/players\/([\w-]+)\.(?:js|html)/);
+  if (jwMatch) return `https://cdn.jwplayer.com/players/${jwMatch[1]}.html`;
+
   const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&?/]+)/);
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0`;
 
