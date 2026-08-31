@@ -202,14 +202,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     
     $db->beginTransaction();
     try {
-        // 4. Deleta matrícula do aluno
-        $stmt = $db->prepare('DELETE FROM matriculas WHERE id = ?');
-        $stmt->execute([$matricula['id']]);
-        
-        // 5. Decrementa vagas_usadas do gestor
-        $stmt = $db->prepare('UPDATE matriculas SET vagas_usadas = GREATEST(0, vagas_usadas - 1) WHERE id = ?');
-        $stmt->execute([$contract['id']]);
-        
+        if ((int)$matricula['id'] === (int)$contract['id']) {
+            // A matrícula a remover é a MESMA linha do contrato B2B (o gestor
+            // principal guarda sua própria participação na linha de
+            // vagas_totais/vagas_usadas). Nunca apagar essa linha — apagaria
+            // o contrato inteiro (vagas do curso somem para todo mundo).
+            // Só zera a participação do gestor e libera a vaga de volta.
+            $stmt = $db->prepare('UPDATE matriculas SET participante = 0, vagas_usadas = GREATEST(0, vagas_usadas - 1), progresso_total = 0, concluido = 0 WHERE id = ?');
+            $stmt->execute([$matricula['id']]);
+        } else {
+            // 4. Deleta matrícula do aluno
+            $stmt = $db->prepare('DELETE FROM matriculas WHERE id = ?');
+            $stmt->execute([$matricula['id']]);
+
+            // 5. Decrementa vagas_usadas do gestor
+            $stmt = $db->prepare('UPDATE matriculas SET vagas_usadas = GREATEST(0, vagas_usadas - 1) WHERE id = ?');
+            $stmt->execute([$contract['id']]);
+        }
+
         $db->commit();
         jsonOk(['success' => true, 'message' => 'Participante removido com sucesso!']);
     } catch (Exception $e) {
