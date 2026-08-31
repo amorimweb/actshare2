@@ -86,8 +86,8 @@ function renderCardCurso(curso) {
             ${linkExplicacao}
           </div>
         ` : ''}
-        <div class="flex items-center justify-between text-xs text-gray-400">
-          <span>${curso.carga_horaria_horas || 0}h</span>
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-semibold text-gray-800">${curso.carga_horaria_horas || 0}h</span>
           <span class="font-semibold text-primary" id="${cardId}-preco">${curso.preco > 0 ? 'R$ ' + parseFloat(curso.preco).toFixed(2).replace('.', ',') : 'Gratuito'}</span>
         </div>
       </div>
@@ -100,7 +100,7 @@ function toggleExameCard(event, cardId, cursoId, tipo, disponivel) {
   event.stopPropagation();
 
   if (!disponivel) {
-    alert('Não há Exame Exemplar Global vinculado a este treinamento.');
+    alert('Não há Avaliação ou Exame Exemplar Global vinculado a este treinamento.');
     return;
   }
 

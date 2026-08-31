@@ -11,12 +11,12 @@
   <div class="grid lg:grid-cols-3 gap-8 mb-10">
     <div class="lg:col-span-2">
       <div id="curso-categoria" class="text-sm text-secondary font-medium mb-2"></div>
-      <h1 id="curso-titulo" class="text-3xl font-bold text-gray-800 mb-4"></h1>
+      <h1 id="curso-titulo" class="text-3xl font-bold text-gray-800 mb-2"></h1>
+      <span id="curso-carga" class="flex items-center gap-1.5 text-secondary font-bold text-base mb-4">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
       <p id="curso-descricao" class="text-gray-600 mb-6"></p>
       <div class="flex flex-wrap gap-4 text-sm text-gray-500">
-        <span id="curso-carga" class="flex items-center gap-1 font-bold text-gray-800">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </span>
         <span id="curso-instrutor" class="flex items-center gap-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </span>
@@ -122,6 +122,7 @@
     document.getElementById('curso-descricao').textContent  = visivel('vis_breve_descricao') ? (cursoData.descricao || '') : '';
     document.getElementById('curso-categoria').textContent  = cursoData.categoria?.nome || '';
     if (visivel('vis_carga_horaria')) document.getElementById('curso-carga').innerHTML += `${cursoData.carga_horaria_horas || 0}h de conteúdo`;
+    else document.getElementById('curso-carga').classList.add('hidden');
     document.getElementById('curso-instrutor').innerHTML   += cursoData.instrutor?.nome || '';
     document.getElementById('curso-preco').textContent      = !visivel('vis_valor') ? '' : (cursoData.preco > 0
       ? 'R$ ' + parseFloat(cursoData.preco).toFixed(2).replace('.', ',')

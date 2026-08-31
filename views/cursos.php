@@ -40,7 +40,7 @@
   <p id="cursos-empty" class="hidden text-center py-16 text-gray-400">Nenhum curso encontrado.</p>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=6"></script>
+<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=7"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     carregarPaginaCursos();

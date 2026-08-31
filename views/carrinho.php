@@ -14,7 +14,10 @@ require __DIR__ . '/layout/header.php';
       </div>
       
       <div id="carrinho-itens-list" class="space-y-4 hidden"></div>
-      
+      <p id="carrinho-info-vagas" class="hidden text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+        Comprando mais de uma unidade/vaga em um mesmo treinamento, você pode indicar alunos diferentes para cada vaga.
+      </p>
+
       <div id="carrinho-vazio" class="hidden bg-gray-50 border border-gray-100 rounded-2xl p-12 text-center">
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
         <h3 class="text-gray-700 font-bold text-lg mb-2">Seu carrinho está vazio</h3>
@@ -68,6 +71,12 @@ require __DIR__ . '/layout/header.php';
         </div>
 
         <div class="space-y-3">
+          <button onclick="abrirModalDescontoProgressivo()" type="button"
+            class="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-secondary hover:underline">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Ver faixas de Desconto Progressivo
+          </button>
+
           <button onclick="irParaCheckout()" id="btn-checkout"
             class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
             Ir para o Pagamento
@@ -82,6 +91,20 @@ require __DIR__ . '/layout/header.php';
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Modal Desconto Progressivo -->
+<div id="modal-desconto-progressivo" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="text-lg font-bold text-gray-800">Desconto Progressivo</h3>
+      <button onclick="fecharModalDescontoProgressivo()" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <p class="text-xs text-gray-500 mb-4">Quanto mais vagas você compra de um mesmo treinamento, maior o desconto aplicado automaticamente sobre esse item.</p>
+    <div id="modal-desconto-tabela" class="space-y-1.5 text-sm"></div>
   </div>
 </div>
 
@@ -150,15 +173,19 @@ require __DIR__ . '/layout/header.php';
       msg.className = 'text-xs font-medium text-green-600 block';
     }
 
+    const infoVagas = document.getElementById('carrinho-info-vagas');
+
     if (cart.length === 0) {
       vazio.classList.remove('hidden');
       list.classList.add('hidden');
+      infoVagas.classList.add('hidden');
       resumo.classList.add('opacity-50', 'pointer-events-none');
       return;
     }
 
     vazio.classList.add('hidden');
     list.classList.remove('hidden');
+    infoVagas.classList.toggle('hidden', !cart.some(item => item.vagas > 1));
     resumo.classList.remove('opacity-50', 'pointer-events-none');
 
     renderItens(cart);
@@ -404,6 +431,21 @@ require __DIR__ . '/layout/header.php';
     msg.classList.add('hidden');
 
     carregarCarrinho();
+  }
+
+  function abrirModalDescontoProgressivo() {
+    const tabela = document.getElementById('modal-desconto-tabela');
+    tabela.innerHTML = faixasDesconto.filter(f => f.percentual > 0).map(f => `
+      <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+        <span class="text-gray-600">${f.min}${f.max ? ' a ' + f.max : '+'} vaga${f.max !== 1 ? 's' : ''}</span>
+        <span class="font-bold text-secondary">${f.percentual}%</span>
+      </div>
+    `).join('') || '<p class="text-xs text-gray-400 text-center py-4">Nenhuma faixa de desconto configurada.</p>';
+    document.getElementById('modal-desconto-progressivo').classList.remove('hidden');
+  }
+
+  function fecharModalDescontoProgressivo() {
+    document.getElementById('modal-desconto-progressivo').classList.add('hidden');
   }
 
   function irParaCheckout() {

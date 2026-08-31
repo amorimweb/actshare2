@@ -104,7 +104,7 @@ $showCourseNav = true;
   </div>
 </section>
 
-<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=6"></script>
+<script src="<?= BASE_PATH ?>/assets/js/cursos.js?v=7"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     carregarCursosDestaque('cursos-grid', 4);
