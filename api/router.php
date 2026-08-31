@@ -120,6 +120,7 @@ $routes = [
     ['PATCH',  'admin/usuarios',       __DIR__ . '/admin/usuarios.php'],
     ['GET',    'admin/pedidos',        __DIR__ . '/admin/pedidos.php'],
     ['GET',    'admin/pedidos/:id',    __DIR__ . '/admin/pedidos_item.php'],
+    ['PUT',    'admin/pedidos/:id',    __DIR__ . '/admin/pedidos_item.php'],
     ['GET',    'admin/clientes',       __DIR__ . '/admin/clientes.php'],
     ['GET',    'admin/clientes/:id',   __DIR__ . '/admin/clientes_item.php'],
     ['PUT',    'admin/clientes/:id',   __DIR__ . '/admin/clientes_item.php'],

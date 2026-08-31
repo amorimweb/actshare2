@@ -10,13 +10,16 @@ require_once __DIR__ . '/configuracoes.php';
  * pelo botão de simulação (sem credenciais reais do ASAAS) quanto pelo
  * webhook de confirmação de pagamento real (api/checkout/asaas-webhook.php).
  */
-function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
+function liberarMatriculasDoPedido(PDO $db, int $pedidoId, string $situacaoAlvo = 'pago'): array {
     $stmt = $db->prepare('SELECT * FROM pedidos WHERE id = ? LIMIT 1');
     $stmt->execute([$pedidoId]);
     $pedido = $stmt->fetch();
     if (!$pedido) throw new Exception('Pedido não encontrado.');
 
-    if ($pedido['situacao'] === 'pago') {
+    // 'pago' (confirmação automática via Asaas) e 'baixa_manual' (Admin
+    // confirmou manualmente) têm o mesmo efeito de liberar acesso — só não
+    // repete a liberação se já tiver sido feita por qualquer um dos dois.
+    if (in_array($pedido['situacao'], ['pago', 'baixa_manual'], true)) {
         return ['already_paid' => true];
     }
 
@@ -24,7 +27,7 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
 
     $db->beginTransaction();
     try {
-        $db->prepare('UPDATE pedidos SET situacao = "pago" WHERE id = ?')->execute([$pedidoId]);
+        $db->prepare('UPDATE pedidos SET situacao = ? WHERE id = ?')->execute([$situacaoAlvo, $pedidoId]);
 
         // PJ sempre vira Gestor ao comprar, mesmo comprando 1 única vaga
         // (PF só vira Gestor quando compra 2+ vagas do mesmo produto — ver
@@ -129,5 +132,31 @@ function liberarMatriculasDoPedido(PDO $db, int $pedidoId): array {
     } catch (Exception $e) {
         $db->rollBack();
         throw $e;
+    }
+}
+
+/**
+ * Propaga um novo prazo de acesso (data_fim_acesso), editado pelo Admin num
+ * item de pedido, para todos os alunos vinculados àquele curso através
+ * dessa compra: a matrícula do próprio comprador (linha de contrato, no
+ * caso B2B) e, se for contrato B2B, também os membros da organização do
+ * gestor já alocados nesse mesmo curso — mesmo que o curso já tenha sido
+ * iniciado por eles (pedido explícito do cliente).
+ */
+function propagarPrazoAcessoDoItem(PDO $db, int $usuarioId, int $cursoId, string $novaDataFim): void {
+    $stmt = $db->prepare('UPDATE matriculas SET data_fim_acesso = ? WHERE aluno_id = ? AND curso_id = ?');
+    $stmt->execute([$novaDataFim, $usuarioId, $cursoId]);
+
+    $stmt = $db->prepare('SELECT id FROM organizacoes WHERE gestor_id = ? LIMIT 1');
+    $stmt->execute([$usuarioId]);
+    $orgId = $stmt->fetchColumn();
+    if ($orgId) {
+        $stmt = $db->prepare('
+            UPDATE matriculas m
+            JOIN membros_organizacao mo ON mo.usuario_id = m.aluno_id
+            SET m.data_fim_acesso = ?
+            WHERE mo.organizacao_id = ? AND m.curso_id = ?
+        ');
+        $stmt->execute([$novaDataFim, $orgId, $cursoId]);
     }
 }

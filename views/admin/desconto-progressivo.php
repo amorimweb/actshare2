@@ -20,7 +20,7 @@
   <div id="faixas-msg" class="hidden mt-4 text-xs rounded-lg px-3 py-2"></div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=10"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=11"></script>
 <script>
   const TOTAL_FAIXAS = 8;
   document.addEventListener('DOMContentLoaded', carregarFaixasProgressivo);

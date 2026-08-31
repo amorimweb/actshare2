@@ -1274,7 +1274,7 @@ var _pedidosAdminRaw = [];
 var _pedidosAdminSortCampo = null;
 var _pedidosAdminSortDir = 'desc';
 
-const SITUACAO_LABEL = { pendente: 'Aguardando Pgto', pago: 'Pago', cancelado: 'Cancelado' };
+const SITUACAO_LABEL = { pendente: 'Aguardando Pgto', pago: 'Pago', baixa_manual: 'Baixa Manual', cancelado: 'Cancelado' };
 const FORMA_PGTO_LABEL = { pix: 'PIX', boleto: 'Boleto', cartao: 'Cartão de Crédito' };
 
 async function carregarPedidosAdmin() {
@@ -1299,7 +1299,7 @@ function renderPedidosAdminTable(pedidos) {
     tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">Nenhum pedido encontrado.</td></tr>';
     return;
   }
-  const statusCor = { pendente: 'bg-amber-100 text-amber-700', pago: 'bg-green-100 text-green-700', cancelado: 'bg-red-100 text-red-700' };
+  const statusCor = { pendente: 'bg-amber-100 text-amber-700', pago: 'bg-green-100 text-green-700', baixa_manual: 'bg-blue-100 text-blue-700', cancelado: 'bg-red-100 text-red-700' };
   tbody.innerHTML = pedidos.map(p => `
     <tr class="hover:bg-gray-50 cursor-pointer" onclick="abrirDetalhePedido(${p.id})">
       <td class="px-4 py-3 text-gray-400">#${p.id}</td>
@@ -1315,50 +1315,202 @@ function renderPedidosAdminTable(pedidos) {
   `).join('');
 }
 
+let _pedidoEdicaoId = null;
+let _pedidoEdicaoProdutos = null; // { cursos: [...], combos: [...] } — carregado sob demanda
+
+async function getPedidoEdicaoProdutos() {
+  if (_pedidoEdicaoProdutos) return _pedidoEdicaoProdutos;
+  const [cursos, combos] = await Promise.all([
+    apiFetch(_B() + '/api/cursos'),
+    apiFetch(_B() + '/api/combos').catch(() => []),
+  ]);
+  _pedidoEdicaoProdutos = { cursos, combos };
+  return _pedidoEdicaoProdutos;
+}
+
 async function abrirDetalhePedido(id) {
+  _pedidoEdicaoId = id;
   document.getElementById('ped-id-titulo').textContent = '#' + id;
   document.getElementById('pedido-detalhe-body').innerHTML = 'Carregando...';
   document.getElementById('modal-pedido').classList.remove('hidden');
   try {
     const p = await apiFetch(_B() + '/api/admin/pedidos/' + id);
-    const itensHtml = p.itens.map(it => `
-      <tr>
-        <td class="px-3 py-2">${esc(it.produto)}</td>
-        <td class="px-3 py-2 text-gray-500">${it.prazo_acesso_dias ? it.prazo_acesso_dias + ' dias' : '—'}</td>
-        <td class="px-3 py-2 text-right">R$ ${Number(it.preco_unitario).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-        <td class="px-3 py-2 text-center">${it.vagas}</td>
-        <td class="px-3 py-2 text-right">R$ ${Number(it.preco_total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-        <td class="px-3 py-2 text-center">${it.percentual_desconto}%</td>
-        <td class="px-3 py-2 text-right font-semibold">R$ ${Number(it.liquido_pago).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-      </tr>
-    `).join('');
 
-    document.getElementById('pedido-detalhe-body').innerHTML = `
-      <div class="grid grid-cols-2 gap-4 mb-5 text-xs">
-        <div><span class="text-gray-400 uppercase font-semibold">Cliente</span><br>${esc(p.nome_cliente)} — ${esc(p.usuario_email)}</div>
-        <div><span class="text-gray-400 uppercase font-semibold">Status</span><br>${SITUACAO_LABEL[p.situacao] || p.situacao}</div>
-        <div><span class="text-gray-400 uppercase font-semibold">Forma de Pagamento</span><br>${FORMA_PGTO_LABEL[p.forma_pagamento] || p.forma_pagamento || '—'}</div>
-        <div><span class="text-gray-400 uppercase font-semibold">Cupom</span><br>${esc(p.cupom_codigo || '—')}</div>
-        <div><span class="text-gray-400 uppercase font-semibold">Transação Asaas</span><br>${esc(p.asaas_id || '—')}</div>
-        <div><span class="text-gray-400 uppercase font-semibold">Total Pago</span><br><span class="text-base font-bold text-gray-800">R$ ${Number(p.total_liquido).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>
-      </div>
-      <table class="w-full text-xs border border-gray-100 rounded-lg overflow-hidden">
-        <thead class="bg-gray-50 text-gray-500">
-          <tr>
-            <th class="px-3 py-2 text-left">Produto</th>
-            <th class="px-3 py-2 text-left">Prazo Acesso</th>
-            <th class="px-3 py-2 text-right">Preço Unit.</th>
-            <th class="px-3 py-2 text-center">Qde</th>
-            <th class="px-3 py-2 text-right">Preço Total</th>
-            <th class="px-3 py-2 text-center">% Desc.</th>
-            <th class="px-3 py-2 text-right">Líquido Pago</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">${itensHtml}</tbody>
-      </table>
-    `;
+    if (p.situacao === 'pago') {
+      renderDetalhePedidoSomenteLeitura(p);
+    } else {
+      await renderDetalhePedidoEditavel(p);
+    }
   } catch (e) {
     document.getElementById('pedido-detalhe-body').innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`;
+  }
+}
+
+function renderDetalhePedidoSomenteLeitura(p) {
+  const itensHtml = p.itens.map(it => `
+    <tr>
+      <td class="px-3 py-2">${esc(it.produto)}</td>
+      <td class="px-3 py-2 text-gray-500">${it.prazo_acesso_dias ? it.prazo_acesso_dias + ' dias' : '—'}</td>
+      <td class="px-3 py-2 text-right">R$ ${Number(it.preco_unitario).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+      <td class="px-3 py-2 text-center">${it.vagas}</td>
+      <td class="px-3 py-2 text-right">R$ ${Number(it.preco_total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+      <td class="px-3 py-2 text-center">${it.percentual_desconto}%</td>
+      <td class="px-3 py-2 text-right font-semibold">R$ ${Number(it.liquido_pago).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('pedido-detalhe-body').innerHTML = `
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg px-4 py-3 font-medium">
+      🔒 Pedido pago via Asaas — confirmação automática. Não pode mais ser editado.
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-5 text-xs">
+      <div><span class="text-gray-400 uppercase font-semibold">Cliente</span><br>${esc(p.nome_cliente)} — ${esc(p.usuario_email)}</div>
+      <div><span class="text-gray-400 uppercase font-semibold">Status</span><br>${SITUACAO_LABEL[p.situacao] || p.situacao}</div>
+      <div><span class="text-gray-400 uppercase font-semibold">Forma de Pagamento</span><br>${FORMA_PGTO_LABEL[p.forma_pagamento] || p.forma_pagamento || '—'}</div>
+      <div><span class="text-gray-400 uppercase font-semibold">Cupom</span><br>${esc(p.cupom_codigo || '—')}</div>
+      <div><span class="text-gray-400 uppercase font-semibold">Transação Asaas</span><br>${esc(p.asaas_id || '—')}</div>
+      <div><span class="text-gray-400 uppercase font-semibold">Total Pago</span><br><span class="text-base font-bold text-gray-800">R$ ${Number(p.total_liquido).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>
+      ${p.observacao_admin ? `<div class="col-span-2"><span class="text-gray-400 uppercase font-semibold">Observação (Admin)</span><br>${esc(p.observacao_admin)}</div>` : ''}
+    </div>
+    <table class="w-full text-xs border border-gray-100 rounded-lg overflow-hidden">
+      <thead class="bg-gray-50 text-gray-500">
+        <tr>
+          <th class="px-3 py-2 text-left">Produto</th>
+          <th class="px-3 py-2 text-left">Prazo Acesso</th>
+          <th class="px-3 py-2 text-right">Preço Unit.</th>
+          <th class="px-3 py-2 text-center">Qde</th>
+          <th class="px-3 py-2 text-right">Preço Total</th>
+          <th class="px-3 py-2 text-center">% Desc.</th>
+          <th class="px-3 py-2 text-right">Líquido Pago</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">${itensHtml}</tbody>
+    </table>
+  `;
+}
+
+async function renderDetalhePedidoEditavel(p) {
+  const { cursos, combos } = await getPedidoEdicaoProdutos();
+  const cursosPorId = Object.fromEntries(cursos.map(c => [c.id, c]));
+
+  const optsProduto = (itemAtual) => {
+    const cursoOpts = cursos.map(c => `<option value="curso:${c.id}" ${itemAtual.curso_id == c.id ? 'selected' : ''}>${esc(c.titulo)}</option>`).join('');
+    const comboOpts = combos.map(c => `<option value="combo:${c.id}" ${itemAtual.combo_id == c.id ? 'selected' : ''}>[Combo] ${esc(c.titulo)}</option>`).join('');
+    return cursoOpts + comboOpts;
+  };
+
+  const examesCheckboxes = (item) => {
+    if (!item.curso_id) return '<span class="text-gray-300">—</span>';
+    const curso = cursosPorId[item.curso_id];
+    const examesDisponiveis = curso?.exames || [];
+    if (!examesDisponiveis.length) return '<span class="text-gray-300">—</span>';
+    const selecionados = (item.exames_selecionados || '').split(',').filter(Boolean);
+    return examesDisponiveis.map(ex => `
+      <label class="inline-flex items-center gap-1 mr-2 cursor-pointer select-none">
+        <input type="checkbox" class="ped-item-exame w-3 h-3 accent-secondary" value="${ex.tipo}" ${selecionados.includes(ex.tipo) ? 'checked' : ''}>
+        <span class="text-[10px]">${EXAME_TIPO_LABEL[ex.tipo] || ex.tipo}</span>
+      </label>
+    `).join('');
+  };
+
+  const itensHtml = p.itens.map(it => `
+    <tr class="ped-item-row" data-item-id="${it.id}">
+      <td class="px-2 py-2">
+        <select class="ped-item-produto w-40 border border-gray-200 rounded px-1.5 py-1 text-xs">${optsProduto(it)}</select>
+      </td>
+      <td class="px-2 py-2">${examesCheckboxes(it)}</td>
+      <td class="px-2 py-2">
+        <input type="number" step="0.01" min="0" class="ped-item-preco w-24 border border-gray-200 rounded px-1.5 py-1 text-xs text-right" value="${Number(it.preco_unitario).toFixed(2)}">
+      </td>
+      <td class="px-2 py-2">
+        <input type="number" min="1" class="ped-item-vagas w-14 border border-gray-200 rounded px-1.5 py-1 text-xs text-center" value="${it.vagas}">
+      </td>
+      <td class="px-2 py-2">
+        <input type="number" min="0" placeholder="dias" title="Novo prazo de acesso em dias a partir de hoje — deixe em branco para não alterar" class="ped-item-prazo w-20 border border-gray-200 rounded px-1.5 py-1 text-xs text-center">
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('pedido-detalhe-body').innerHTML = `
+    <div class="grid grid-cols-2 gap-4 mb-5 text-xs">
+      <div><span class="text-gray-400 uppercase font-semibold">Cliente</span><br>${esc(p.nome_cliente)} — ${esc(p.usuario_email)}</div>
+      <div>
+        <span class="text-gray-400 uppercase font-semibold">Status do Pagamento</span><br>
+        <select id="ped-edit-situacao" class="border border-gray-200 rounded px-2 py-1 text-xs mt-0.5">
+          <option value="pendente" ${p.situacao === 'pendente' ? 'selected' : ''}>Aguardando Pgto</option>
+          <option value="baixa_manual" ${p.situacao === 'baixa_manual' ? 'selected' : ''}>Baixa Manual</option>
+          <option value="cancelado" ${p.situacao === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+        </select>
+      </div>
+      <div><span class="text-gray-400 uppercase font-semibold">Forma de Pagamento</span><br>${FORMA_PGTO_LABEL[p.forma_pagamento] || p.forma_pagamento || '—'}</div>
+      <div><span class="text-gray-400 uppercase font-semibold">Cupom</span><br>${esc(p.cupom_codigo || '—')}</div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observação (interna, só o Admin vê)</label>
+      <textarea id="ped-edit-observacao" rows="2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs">${esc(p.observacao_admin || '')}</textarea>
+    </div>
+
+    <table class="w-full text-xs border border-gray-100 rounded-lg overflow-hidden mb-2">
+      <thead class="bg-gray-50 text-gray-500">
+        <tr>
+          <th class="px-2 py-2 text-left">Produto</th>
+          <th class="px-2 py-2 text-left">Avaliação/Exame</th>
+          <th class="px-2 py-2 text-left">Preço Unit.</th>
+          <th class="px-2 py-2 text-left">Qde</th>
+          <th class="px-2 py-2 text-left">Novo Prazo Acesso</th>
+        </tr>
+      </thead>
+      <tbody id="ped-edit-itens" class="divide-y divide-gray-100">${itensHtml}</tbody>
+    </table>
+    <p class="text-[10px] text-gray-400 mb-4">Se o produto for trocado para um Combo, a seleção de Avaliação/Exame do item deixa de se aplicar.</p>
+
+    <div id="ped-edit-erro" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-4 py-2 mb-3"></div>
+
+    <button id="btn-salvar-pedido" onclick="salvarEdicaoPedido()" class="w-full bg-primary text-white text-xs font-bold uppercase tracking-wider py-3 rounded-lg hover:bg-slate-800 transition-colors">
+      Salvar Alterações
+    </button>
+  `;
+}
+
+async function salvarEdicaoPedido() {
+  const btn = document.getElementById('btn-salvar-pedido');
+  const err = document.getElementById('ped-edit-erro');
+  err.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Gravando...';
+
+  const itens = [...document.querySelectorAll('#ped-edit-itens .ped-item-row')].map(row => {
+    const [tipo, prodId] = row.querySelector('.ped-item-produto').value.split(':');
+    const exames = [...row.querySelectorAll('.ped-item-exame:checked')].map(c => c.value).join(',');
+    const prazo = row.querySelector('.ped-item-prazo').value.trim();
+    return {
+      id: parseInt(row.dataset.itemId),
+      curso_id: tipo === 'curso' ? parseInt(prodId) : null,
+      combo_id: tipo === 'combo' ? parseInt(prodId) : null,
+      preco_unitario: parseFloat(row.querySelector('.ped-item-preco').value) || 0,
+      vagas: parseInt(row.querySelector('.ped-item-vagas').value) || 1,
+      exames_selecionados: tipo === 'curso' ? exames : '',
+      prazo_acesso_dias: prazo ? parseInt(prazo) : null,
+    };
+  });
+
+  const payload = {
+    situacao: document.getElementById('ped-edit-situacao').value,
+    observacao_admin: document.getElementById('ped-edit-observacao').value,
+    itens,
+  };
+
+  try {
+    await apiPut(_B() + '/api/admin/pedidos/' + _pedidoEdicaoId, payload);
+    document.getElementById('modal-pedido').classList.add('hidden');
+    carregarPedidosAdmin();
+  } catch (e) {
+    err.textContent = e.message || 'Erro ao salvar pedido.';
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salvar Alterações';
   }
 }
 
