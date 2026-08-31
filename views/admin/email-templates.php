@@ -8,7 +8,7 @@
 
 <div id="templates-list" class="space-y-4">Carregando...</div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=11"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=12"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarEmailTemplates);
 

@@ -24,7 +24,7 @@
   tela de edição do curso, em "Exame Exemplar Global".
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=11"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=12"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarTextoExplicacaoExames);
 

@@ -1190,10 +1190,24 @@ function renderClientesAdminTable(clientes) {
   `).join('');
 }
 
+function abrirNovoClienteAdmin() {
+  document.getElementById('cli-modal-titulo').textContent = 'Novo Cliente';
+  document.getElementById('form-cliente').reset();
+  document.getElementById('cli-id').value = '';
+  document.getElementById('cli-email-bloco').classList.remove('hidden');
+  document.getElementById('cli-email').disabled = false;
+  document.getElementById('cli-erro').classList.add('hidden');
+  document.getElementById('modal-cliente').classList.remove('hidden');
+}
+
 async function abrirFichaCliente(id) {
   try {
     const c = await apiFetch(_B() + '/api/admin/clientes/' + id);
+    document.getElementById('cli-modal-titulo').textContent = 'Ficha do Cliente';
     document.getElementById('cli-id').value = c.id;
+    document.getElementById('cli-email-bloco').classList.remove('hidden');
+    document.getElementById('cli-email').value = c.email || '';
+    document.getElementById('cli-email').disabled = true;
     document.getElementById('cli-nome').value = c.nome || '';
     document.getElementById('cli-tipo-pessoa').value = c.tipo_pessoa || '';
     document.getElementById('cli-documento').value = c.documento || '';
@@ -1237,10 +1251,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const id = document.getElementById('cli-id').value;
+      const emailVal = document.getElementById('cli-email').value.trim();
+      if (!id && !emailVal) {
+        err.textContent = 'E-mail é obrigatório.';
+        err.classList.remove('hidden');
+        return;
+      }
+
       const btn = document.getElementById('btn-salvar-cliente');
       btn.disabled = true;
 
-      const id = document.getElementById('cli-id').value;
       const body = {
         nome: document.getElementById('cli-nome').value,
         tipo_pessoa: document.getElementById('cli-tipo-pessoa').value,
@@ -1257,9 +1278,11 @@ document.addEventListener('DOMContentLoaded', () => {
         observacao_admin: document.getElementById('cli-observacao').value,
         certificado_acesso: document.querySelector('input[name="cli-certificado-acesso"]:checked')?.value || 'ambos',
       };
+      if (!id) body.email = emailVal;
 
       try {
-        await apiPut(_B() + '/api/admin/clientes/' + id, body);
+        if (id) await apiPut(_B() + '/api/admin/clientes/' + id, body);
+        else    await apiPost(_B() + '/api/admin/clientes', body);
         document.getElementById('modal-cliente').classList.add('hidden');
         carregarClientesAdmin();
       } catch (ex) {
@@ -1511,6 +1534,162 @@ async function salvarEdicaoPedido() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Salvar Alterações';
+  }
+}
+
+// ============ NOVO PEDIDO MANUAL (item 7) ============
+let _npUsuariosCache = null;
+let _npItemSeq = 0;
+
+async function getNpUsuarios() {
+  if (_npUsuariosCache) return _npUsuariosCache;
+  _npUsuariosCache = await apiFetch(_B() + '/api/admin/usuarios');
+  return _npUsuariosCache;
+}
+
+async function abrirNovoPedidoAdmin() {
+  document.getElementById('np-cliente-busca').value = '';
+  document.getElementById('np-cliente-id').value = '';
+  document.getElementById('np-cliente-selecionado').classList.add('hidden');
+  document.getElementById('np-cliente-resultados').classList.add('hidden');
+  document.getElementById('np-itens').innerHTML = '';
+  document.getElementById('np-erro').classList.add('hidden');
+  await getPedidoEdicaoProdutos();
+  adicionarItemNovoPedido();
+  document.getElementById('modal-novo-pedido').classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const buscaCliente = document.getElementById('np-cliente-busca');
+  if (buscaCliente) {
+    buscaCliente.addEventListener('input', async () => {
+      const q = buscaCliente.value.trim().toLowerCase();
+      const resultados = document.getElementById('np-cliente-resultados');
+      document.getElementById('np-cliente-id').value = '';
+      if (q.length < 2) { resultados.classList.add('hidden'); return; }
+
+      const usuarios = await getNpUsuarios();
+      const match = usuarios.filter(u => u.nome.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)).slice(0, 8);
+      if (!match.length) {
+        resultados.innerHTML = '<div class="px-3 py-2 text-gray-400">Nenhum usuário encontrado.</div>';
+      } else {
+        resultados.innerHTML = match.map(u => `
+          <button type="button" onclick="selecionarClienteNovoPedido(${u.id}, '${esc(u.nome)}', '${esc(u.email)}')"
+            class="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+            <div class="font-medium text-gray-800">${esc(u.nome)}</div>
+            <div class="text-gray-400">${esc(u.email)}</div>
+          </button>
+        `).join('');
+      }
+      resultados.classList.remove('hidden');
+    });
+  }
+});
+
+function selecionarClienteNovoPedido(id, nome, email) {
+  document.getElementById('np-cliente-id').value = id;
+  document.getElementById('np-cliente-busca').value = nome;
+  document.getElementById('np-cliente-resultados').classList.add('hidden');
+  const sel = document.getElementById('np-cliente-selecionado');
+  sel.textContent = `✓ ${nome} (${email})`;
+  sel.classList.remove('hidden');
+}
+
+function adicionarItemNovoPedido() {
+  const { cursos, combos } = _pedidoEdicaoProdutos || { cursos: [], combos: [] };
+  const cursoOpts = cursos.map(c => `<option value="curso:${c.id}" data-preco="${c.preco}">${esc(c.titulo)}</option>`).join('');
+  const comboOpts = combos.map(c => `<option value="combo:${c.id}" data-preco="${c.preco}">[Combo] ${esc(c.titulo)}</option>`).join('');
+  const rowId = 'np-row-' + (++_npItemSeq);
+
+  const tr = document.createElement('tr');
+  tr.className = 'np-item-row';
+  tr.id = rowId;
+  tr.innerHTML = `
+    <td class="px-2 py-2">
+      <select class="np-item-produto w-40 border border-gray-200 rounded px-1.5 py-1 text-xs" onchange="atualizarLinhaNovoPedido('${rowId}')">
+        <option value="">Selecione...</option>
+        ${cursoOpts}${comboOpts}
+      </select>
+    </td>
+    <td class="np-item-exames-cell px-2 py-2 text-gray-300">—</td>
+    <td class="px-2 py-2">
+      <input type="number" step="0.01" min="0" class="np-item-preco w-24 border border-gray-200 rounded px-1.5 py-1 text-xs text-right" value="0.00">
+    </td>
+    <td class="px-2 py-2">
+      <input type="number" min="1" class="np-item-vagas w-14 border border-gray-200 rounded px-1.5 py-1 text-xs text-center" value="1">
+    </td>
+    <td class="px-2 py-2">
+      <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
+    </td>
+  `;
+  document.getElementById('np-itens').appendChild(tr);
+}
+
+function atualizarLinhaNovoPedido(rowId) {
+  const row = document.getElementById(rowId);
+  const select = row.querySelector('.np-item-produto');
+  const [tipo, prodId] = (select.value || '').split(':');
+  const opt = select.selectedOptions[0];
+  row.querySelector('.np-item-preco').value = opt ? parseFloat(opt.dataset.preco || 0).toFixed(2) : '0.00';
+
+  const cell = row.querySelector('.np-item-exames-cell');
+  if (tipo === 'curso') {
+    const curso = (_pedidoEdicaoProdutos?.cursos || []).find(c => c.id == prodId);
+    const exames = curso?.exames || [];
+    cell.innerHTML = exames.length ? exames.map(ex => `
+      <label class="inline-flex items-center gap-1 mr-2 cursor-pointer select-none">
+        <input type="checkbox" class="np-item-exame w-3 h-3 accent-secondary" value="${ex.tipo}">
+        <span class="text-[10px]">${EXAME_TIPO_LABEL[ex.tipo] || ex.tipo}</span>
+      </label>
+    `).join('') : '<span class="text-gray-300">—</span>';
+  } else {
+    cell.innerHTML = '<span class="text-gray-300">—</span>';
+  }
+}
+
+async function salvarNovoPedidoAdmin() {
+  const btn = document.getElementById('btn-criar-pedido');
+  const err = document.getElementById('np-erro');
+  err.classList.add('hidden');
+
+  const usuarioId = document.getElementById('np-cliente-id').value;
+  if (!usuarioId) {
+    err.textContent = 'Selecione um cliente da lista.';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  const itens = [...document.querySelectorAll('#np-itens .np-item-row')].map(row => {
+    const [tipo, prodId] = (row.querySelector('.np-item-produto').value || '').split(':');
+    const exames = [...row.querySelectorAll('.np-item-exame:checked')].map(c => c.value).join(',');
+    return {
+      curso_id: tipo === 'curso' ? parseInt(prodId) : null,
+      combo_id: tipo === 'combo' ? parseInt(prodId) : null,
+      preco_unitario: parseFloat(row.querySelector('.np-item-preco').value) || 0,
+      vagas: parseInt(row.querySelector('.np-item-vagas').value) || 1,
+      exames_selecionados: exames,
+    };
+  }).filter(it => it.curso_id || it.combo_id);
+
+  if (!itens.length) {
+    err.textContent = 'Adicione pelo menos um produto válido.';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Gravando...';
+
+  try {
+    await apiPost(_B() + '/api/admin/pedidos', { usuario_id: parseInt(usuarioId), itens });
+    document.getElementById('modal-novo-pedido').classList.add('hidden');
+    carregarPedidosAdmin();
+  } catch (e) {
+    err.textContent = e.message || 'Erro ao criar pedido.';
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Criar Pedido';
   }
 }
 

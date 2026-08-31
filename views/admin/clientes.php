@@ -3,10 +3,15 @@
 
 <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
   <h1 class="text-2xl font-bold text-gray-800">Clientes</h1>
-  <div class="relative">
-    <input type="text" id="clientes-busca" oninput="filtrarClientesAdmin()" placeholder="Buscar por nome, e-mail ou cidade..."
-      class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+  <div class="flex items-center gap-3">
+    <div class="relative">
+      <input type="text" id="clientes-busca" oninput="filtrarClientesAdmin()" placeholder="Buscar por nome, e-mail ou cidade..."
+        class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </div>
+    <button onclick="abrirNovoClienteAdmin()" class="bg-primary text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-blue-900 transition-colors shadow-sm whitespace-nowrap">
+      + Novo Cliente
+    </button>
   </div>
 </div>
 
@@ -42,7 +47,7 @@
 <!-- Modal Ficha do Cliente -->
 <div id="modal-cliente" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-    <h2 class="text-lg font-bold text-gray-800 mb-5">Ficha do Cliente</h2>
+    <h2 id="cli-modal-titulo" class="text-lg font-bold text-gray-800 mb-5">Ficha do Cliente</h2>
     <form id="form-cliente" class="space-y-4">
       <input type="hidden" id="cli-id">
 
@@ -59,6 +64,12 @@
             <option value="juridica">Jurídica</option>
           </select>
         </div>
+      </div>
+
+      <div id="cli-email-bloco">
+        <label class="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
+        <input type="email" id="cli-email" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <p class="text-[11px] text-gray-400 mt-1">Login do cliente. Senha temporária padrão: <code class="bg-gray-100 px-1 rounded">actshare123</code>.</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -136,7 +147,7 @@
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=11"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=12"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarClientesAdmin);
 </script>

@@ -10,3 +10,9 @@ ALTER TABLE pedidos
 
 ALTER TABLE pedidos
   ADD COLUMN IF NOT EXISTS observacao_admin TEXT DEFAULT NULL;
+
+-- Item 7: cliente cadastrado manualmente pelo Admin, sem pedido ou
+-- organização ainda — precisa desse marcador pra aparecer em Admin/Clientes
+-- (hoje a lista só mostra quem já tem pedido ou é gestor de organização).
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS cliente_manual TINYINT(1) NOT NULL DEFAULT 0;
