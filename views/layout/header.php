@@ -23,6 +23,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= BASE_PATH ?>/assets/css/app.css?v=4">
+<link rel="stylesheet" href="<?= BASE_PATH ?>/assets/css/ui.css?v=1">
+<script defer src="<?= BASE_PATH ?>/assets/js/ui.js?v=1"></script>
 </head>
 <body class="font-sans bg-white text-gray-800">
 
@@ -32,7 +34,7 @@ $courseNavGroups = [
   'interpretacao-das-normas' => ['label' => 'Interpretação das Normas', 'courses' => []],
   'auditor-interno' => ['label' => 'Auditor Interno', 'courses' => []],
   'auditor-lider' => ['label' => 'Auditor Líder', 'courses' => []],
-  'automotivo' => ['label' => 'Automotivo', 'courses' => []],
+  'automotivo' => ['label' => 'Core Tools Automotivo', 'courses' => []],
   'seguranca-da-informacao' => ['label' => 'Segurança da Informação', 'courses' => []],
 ];
 

@@ -48,6 +48,8 @@
       scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     }
   </style>
+<link rel="stylesheet" href="<?= BASE_PATH ?>/assets/css/ui.css?v=1">
+<script defer src="<?= BASE_PATH ?>/assets/js/ui.js?v=1"></script>
 </head>
 <body class="font-sans bg-slate-100 min-h-screen">
 

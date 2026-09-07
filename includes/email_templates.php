@@ -19,6 +19,8 @@ function enviarEmailTemplate(PDO $db, string $chave, string $destinatarioEmail, 
         $corpo = str_replace('{' . $k . '}', (string)$v, $corpo);
     }
 
-    $headers = "From: ActShare <no-reply@actshare.com.br>\r\nContent-Type: text/plain; charset=UTF-8";
+    require_once __DIR__ . '/formatted_text.php';
+    $corpo = formatarTexto($corpo);
+    $headers = "From: ActShare <no-reply@actshare.com.br>\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8";
     return @mail($destinatarioEmail, $assunto, $corpo, $headers);
 }

@@ -1,0 +1,36 @@
+/* Shared dialog and form controls. */
+@media screen {
+  [id^="modal-"].fixed > :first-child {
+    position: relative;
+    width: min(1100px, calc(100vw - 32px)) !important;
+    max-width: 1100px !important;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    padding-top: 52px;
+  }
+}
+[id^="modal-"].fixed, [id^="modal-"].fixed * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100,116,139,.25) transparent;
+}
+[id^="modal-"].fixed ::-webkit-scrollbar { width: 5px; height: 5px; }
+[id^="modal-"].fixed ::-webkit-scrollbar-track { background: transparent; }
+[id^="modal-"].fixed ::-webkit-scrollbar-thumb { background: rgba(100,116,139,.25); border-radius: 20px; }
+.dialog-close { position: absolute; right: 14px; top: 12px; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: #64748b; background: #f8fafc; z-index: 2; font-size: 24px; line-height: 1; }
+.dialog-close:hover { color: #0f172a; background: #e2e8f0; }
+.dialog-close:focus-visible, .format-toolbar button:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
+.course-pill { width: 220px; min-width: 220px; min-height: 44px; display: inline-flex; justify-content: center; white-space: normal; text-align: center; }
+.course-pill svg { flex-shrink: 0; }
+.format-toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 5px; border: 1px solid #cbd5e1; border-bottom: 0; border-radius: 8px 8px 0 0; background: #f8fafc; }
+.format-toolbar button { min-width: 30px; height: 30px; padding: 0 7px; border-radius: 4px; color: #334155; font-size: 14px; }
+.format-toolbar button:hover { background: #e2e8f0; }
+.format-toolbar + textarea { border-top-left-radius: 0; border-top-right-radius: 0; }
+.format-preview { border: 1px solid #cbd5e1; padding: 12px; border-radius: 0 0 8px 8px; min-height: 80px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.formatted-text { white-space: pre-wrap; }
+.formatted-text ul, .formatted-text ol { padding-left: 1.5em; }
+.formatted-text ul { list-style: disc; }
+.formatted-text ol { list-style: decimal; }
+.course-image-upload { display: grid; gap: 8px; margin-top: 10px; font-size: 12px; color: #64748b; }
+.course-image-upload input { max-width: 100%; }
+.course-image-upload img { max-width: 240px; max-height: 140px; object-fit: contain; border-radius: 8px; }
+@media print { .dialog-close, .format-toolbar { display: none; } }

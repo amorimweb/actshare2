@@ -87,7 +87,7 @@
       </div>
       <div>
         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">URL da Imagem de Capa (Thumbnail)</label>
-        <input type="url" id="curso-thumb" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        <input type="text" id="curso-thumb" data-course-image class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
       </div>
       <div class="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-3 rounded-lg">
         <label class="flex items-center gap-2 text-xs font-semibold text-gray-750">

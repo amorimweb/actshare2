@@ -25,6 +25,7 @@ function matchRoute(string $pattern, string $route): array|false {
 
 // Tabela de rotas: [método|*, padrão, arquivo]
 $routes = [
+    ['POST', 'cursos/imagem', __DIR__ . '/cursos/imagem.php'],
     // auth
     ['POST',   'auth/login',           __DIR__ . '/auth/login.php'],
     ['POST',   'auth/register',        __DIR__ . '/auth/register.php'],
