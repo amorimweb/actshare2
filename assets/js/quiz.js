@@ -24,6 +24,7 @@ async function carregarQuiz(aulaId, matriculaId, containerId) {
 
 function renderQuiz(container, quizData, aulaId, matriculaId) {
   const perguntas = quizData.perguntas;
+  window._quizOpcoes = Object.fromEntries(perguntas.flatMap(p => p.opcoes.map(o => [o.id, o.texto])));
   const finalizado = quizData.finalizado;
   const aprovado = quizData.aprovado;
   const tentativas = quizData.tentativas_restantes;
@@ -69,8 +70,8 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
     const icone = aprovado 
       ? `<svg class="w-8 h-8 text-green-600 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`
       : `<svg class="w-8 h-8 text-orange-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
-    const titulo = aprovado ? 'Aprovado no Exame!' : 'Exame Finalizado';
-    const desc = aprovado 
+    const titulo = quizData.quizz_modelo ? 'Quiz concluído' : aprovado ? 'Aprovado no Exame!' : 'Exame Finalizado';
+    const desc = quizData.quizz_modelo ? 'Confira as respostas e a justificativa. A próxima aula está liberada.' : aprovado
       ? 'Parabéns! Você atingiu a nota de corte e obteve a sua certificação.'
       : 'Infelizmente você não atingiu a nota de corte recomendada.';
 
@@ -97,17 +98,40 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
         </div>
       </div>
       
-      <button id="btn-enviar-quiz" onclick="enviarRespostasQuiz(${aulaId}, ${matriculaId})"
+      <button id="btn-enviar-quiz" onclick="confirmarFinalizarQuizz(${aulaId}, ${matriculaId})"
         class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition-colors shadow-sm disabled:opacity-60">
-        Enviar Respostas
+        Finalizar Quizz
       </button>
     `;
   }
 
+  // Navegação uma-pergunta-por-tela (escopo V17) — só na fase de resposta;
+  // no gabarito (finalizado) as perguntas aparecem todas, em lista vertical,
+  // como já era antes.
+  const navHtml = (!finalizado && perguntas.length > 1) ? `
+    <div class="flex items-center justify-between mb-4 text-xs">
+      <div class="flex gap-1.5">
+        <button type="button" onclick="quizIrPara(0)" id="quiz-nav-primeira" class="px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40" title="Primeira">«</button>
+        <button type="button" onclick="quizNavegar(-1)" id="quiz-nav-voltar" class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 disabled:opacity-40" title="Voltar">‹ Voltar</button>
+      </div>
+      <span class="font-bold text-gray-500" id="quiz-nav-contador">1 de ${perguntas.length}</span>
+      <div class="flex gap-1.5">
+        <button type="button" onclick="quizNavegar(1)" id="quiz-nav-avancar" class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 disabled:opacity-40" title="Avançar">Avançar ›</button>
+        <button type="button" onclick="quizIrPara(${perguntas.length - 1})" id="quiz-nav-ultima" class="px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40" title="Última">»</button>
+      </div>
+    </div>
+  ` : '';
+  window._quizTotalPerguntas = perguntas.length;
+  window._quizPerguntaAtual = 0;
+
   const listHtml = perguntas.map((p, i) => {
+    // Enquanto não finalizado, uma pergunta por tela (navegação abaixo);
+    // no gabarito (finalizado), mostra todas em lista vertical normalmente
+    // (já era assim, e o escopo V17 pede exatamente isso na correção).
+    const hiddenAttr = (!finalizado && i !== 0) ? 'hidden' : '';
     return `
-      <div class="bg-gray-50/70 border border-gray-100 rounded-2xl p-5 mb-5">
-        <p class="font-semibold text-gray-800 text-sm mb-4 leading-relaxed">${i + 1}. ${esc(p.texto)}</p>
+      <div class="bg-gray-50/70 border border-gray-100 rounded-2xl p-5 mb-5 quiz-pergunta-bloco" data-qidx="${i}" ${hiddenAttr}>
+        <p class="font-semibold text-gray-800 text-sm mb-4 leading-relaxed"><span>${i + 1}.</span> ${esc(p.texto)}</p>
         ${p.imagem_url ? `<img src="${esc(p.imagem_url)}" alt="" class="max-w-full rounded-xl mb-4 border border-gray-200">` : ''}
         <div class="space-y-2.5" id="opcoes-${p.id}">
           ${p.opcoes.map(o => {
@@ -132,7 +156,7 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
                   ? `<svg class="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`
                   : ''
                 }
-                <span class="text-xs leading-relaxed">${esc(o.texto)}</span>
+                <span class="text-xs leading-relaxed">${esc(o.texto)}${finalizado && o.marcada ? ' (sua resposta)' : ''}</span>
               </label>
             `;
           }).join('')}
@@ -150,10 +174,12 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
   container.innerHTML = `
     <div class="animate-fadeIn">
       ${headerHtml}
+      ${navHtml}
       <div id="quiz-questions-list">${listHtml}</div>
       ${footerHtml}
     </div>
   `;
+  if (!finalizado && perguntas.length > 1) atualizarNavQuizz();
 
   if (quizData.e_prova) {
     if (!quizData.com_prova) {
@@ -281,6 +307,51 @@ function renderQuiz(container, quizData, aulaId, matriculaId) {
   }
 }
 
+// Navegação uma-pergunta-por-tela (escopo V17)
+function quizIrPara(idx) {
+  const blocos = document.querySelectorAll('.quiz-pergunta-bloco');
+  if (idx < 0 || idx >= blocos.length) return;
+  blocos.forEach(b => b.hidden = true);
+  blocos[idx].hidden = false;
+  window._quizPerguntaAtual = idx;
+  atualizarNavQuizz();
+}
+
+function quizNavegar(delta) {
+  quizIrPara((window._quizPerguntaAtual || 0) + delta);
+}
+
+function atualizarNavQuizz() {
+  const idx = window._quizPerguntaAtual || 0;
+  const total = window._quizTotalPerguntas || 1;
+  const contador = document.getElementById('quiz-nav-contador');
+  if (contador) contador.textContent = `${idx + 1} de ${total}`;
+
+  const btnPrimeira = document.getElementById('quiz-nav-primeira');
+  const btnVoltar = document.getElementById('quiz-nav-voltar');
+  const btnAvancar = document.getElementById('quiz-nav-avancar');
+  const btnUltima = document.getElementById('quiz-nav-ultima');
+  if (btnPrimeira) btnPrimeira.disabled = (idx === 0);
+  if (btnVoltar) btnVoltar.disabled = (idx === 0);
+  if (btnAvancar) btnAvancar.disabled = (idx === total - 1);
+  if (btnUltima) btnUltima.disabled = (idx === total - 1);
+}
+
+// "Finalizar Quizz?" — confirma que todas as perguntas foram respondidas
+// (alternativas marcadas) antes de enviar de fato (escopo V17).
+function confirmarFinalizarQuizz(aulaId, matriculaId) {
+  const total = window._quizTotalPerguntas || 0;
+  const respondidas = Object.values(window._quizRespostas || {}).filter(r => r && r.length > 0).length;
+
+  const msg = respondidas < total
+    ? `Você respondeu ${respondidas} de ${total} pergunta(s). As não respondidas serão consideradas erradas. Deseja finalizar mesmo assim?`
+    : 'Deseja realmente finalizar o Quizz?';
+
+  if (confirm(msg)) {
+    enviarRespostasQuiz(aulaId, matriculaId);
+  }
+}
+
 function quizResponder(perguntaId, opcaoId, checked) {
   if (!window._quizRespostas) window._quizRespostas = {};
   const atuais = window._quizRespostas[perguntaId] || [];
@@ -291,6 +362,13 @@ function quizResponder(perguntaId, opcaoId, checked) {
     if (idx > -1) atuais.splice(idx, 1);
   }
   window._quizRespostas[perguntaId] = atuais;
+}
+
+// Rádio de seleção única (quiz dinâmico): substitui a resposta em vez de
+// acumular, já que trocar de alternativa não dispara onchange na antiga.
+function quizResponderRadio(perguntaId, opcaoId) {
+  if (!window._quizRespostas) window._quizRespostas = {};
+  window._quizRespostas[perguntaId] = [opcaoId];
 }
 
 function refazerQuizzForm() {
@@ -309,6 +387,9 @@ function refazerQuizzForm() {
     chk.checked = false;
   });
   window._quizRespostas = {};
+
+  // Volta pra primeira pergunta (navegação uma-por-tela)
+  if ((window._quizTotalPerguntas || 0) > 1) quizIrPara(0);
 }
 
 async function avancarQuizzSemAprovacao(aulaId, matriculaId) {
@@ -348,7 +429,11 @@ async function enviarRespostasQuiz(aulaId, matriculaId) {
       respostas:    window._quizRespostas || {}
     });
 
-    if (res.aprovado) {
+    if (res.quizz_concluido) {
+      const container = btn.parentElement;
+      container.innerHTML = `<h3 class="font-bold mb-4">Quiz concluído — ${res.acertos} de ${res.total} respostas corretas</h3>` + res.correcao.map((p, i) => `<section class="border rounded-xl p-4 mb-3"><div>${i + 1}. ${esc(p.texto_pergunta)}</div><p class="text-sm mt-2">Você marcou: ${p.opcoes_escolhidas.map(id => window._quizOpcoes?.[id] || id).map(esc).join(', ')}</p><p class="text-sm ${p.acertou ? 'text-emerald-700' : 'text-orange-700'}">${p.acertou ? 'Parabéns, você acertou!' : 'A resposta correta é: ' + p.textos_corretos.map(esc).join(', ')}</p><div class="text-sm mt-2">${esc(p.justificativa)}</div></section>`).join('') + '<p class="text-emerald-700 font-semibold">A próxima aula está liberada. Escolha-a na lista de aulas.</p>';
+      if (typeof progressoMap !== 'undefined') { progressoMap[aulaId] = {concluida:1}; renderSidebar(); atualizarProgressoLabel(); }
+    } else if (res.aprovado) {
       // Recarregar o player e o quiz (para modo finalizado)
       if (typeof carregarPlayer === 'function') {
         carregarPlayer(cursoId);
@@ -459,7 +544,7 @@ function renderQuizDinamico(container, quizData, quizId, matriculaId) {
         <div class="space-y-2" id="opcoes-${p.id}">
           ${p.opcoes.map(o => {
             let labelClass = "flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all text-xs";
-            let radioHtml = `<input type="radio" name="dq${p.id}" value="${o.id}" class="w-3.5 h-3.5 accent-secondary" onchange="quizResponder(${p.id}, ${o.id})">`;
+            let radioHtml = `<input type="radio" name="dq${p.id}" value="${o.id}" class="w-3.5 h-3.5 accent-secondary" onchange="quizResponderRadio(${p.id}, ${o.id})">`;
 
             if (finalizado) {
               radioHtml = ''; // Não exibe inputs no gabarito
