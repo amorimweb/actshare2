@@ -1,9 +1,37 @@
 <?php $pageTitle = 'Exames — ActShare'; ?>
 <?php require __DIR__ . '/../layout/admin-header.php'; ?>
 
-<div class="mb-8">
-  <h1 class="text-2xl font-bold text-slate-800">Exames</h1>
-  <p class="text-xs text-slate-400 mt-1">Avaliação e Exame Exemplar Global (QM/AU/TL) — vinculados a um treinamento na tela de edição do curso.</p>
+<div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">Exames</h1>
+    <p class="text-xs text-slate-400 mt-1">Avaliação e Exame Exemplar Global (QM/AU/EM/TL), como produto avulso (sem treinamento) ou vinculados a um curso.</p>
+  </div>
+  <a href="<?= BASE_PATH ?>/admin/cursos?novo=avulso" class="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors shrink-0">
+    + Novo Produto de Avaliação/Exame
+  </a>
+</div>
+
+<div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-600 mb-6">
+  Um produto de Avaliação ou Exame Exemplar Global avulso (sem treinamento) é criado como um Produto normal, escolhendo o modelo
+  "Só Avaliação" ou "Só Exame Exemplar Global" — o banco de questões, prazos, nota de corte e tempo limite ficam na própria tela de edição do
+  produto, em "Exame Exemplar Global". Esta tela lista só os produtos cadastrados nesses dois modelos.
+</div>
+
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left">
+      <tr>
+        <th class="px-5 py-3 font-medium text-slate-600">Título</th>
+        <th class="px-5 py-3 font-medium text-slate-600">Tipo</th>
+        <th class="px-5 py-3 font-medium text-slate-600">Preço</th>
+        <th class="px-5 py-3 font-medium text-slate-600">Status</th>
+        <th class="px-5 py-3 font-medium text-slate-600">Ações</th>
+      </tr>
+    </thead>
+    <tbody id="exames-avulsos-tbody" class="divide-y divide-slate-100">
+      <tr><td colspan="5" class="text-center py-8 text-slate-400">Carregando...</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
@@ -18,15 +46,10 @@
   <div id="texto-exames-msg" class="hidden mt-3 text-xs rounded-lg px-3 py-2"></div>
 </div>
 
-<div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mt-6 text-sm text-amber-800">
-  O cadastro completo de produtos de Avaliação/Exame (banco de questões próprio, prazos, nota de corte, tempo limite, produto avulso sem
-  vínculo a um treinamento) ainda está em construção — por enquanto, o vínculo de Avaliação/Exame a um curso é feito na própria
-  tela de edição do curso, em "Exame Exemplar Global".
-</div>
-
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=12"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=19"></script>
 <script>
   document.addEventListener('DOMContentLoaded', carregarTextoExplicacaoExames);
+  document.addEventListener('DOMContentLoaded', carregarExamesAvulsos);
 
   async function carregarTextoExplicacaoExames() {
     try {

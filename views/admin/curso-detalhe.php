@@ -40,10 +40,24 @@
         <button onclick="document.getElementById('modal-exame-perguntas').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
       </div>
 
+      <div class="border border-gray-200 rounded-xl p-4 mb-5">
+        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Assuntos</h3>
+        <p class="text-[10px] text-slate-400 mb-2">Agrupa as perguntas (não aparece pro aluno) — ajuda a montar a prova escolhendo quantas perguntas de cada assunto entram.</p>
+        <div id="exame-assuntos-lista" class="flex flex-wrap gap-1.5 mb-2"></div>
+        <form id="exame-novo-assunto-form" class="flex gap-2">
+          <input type="text" id="exame-assunto-nome" required placeholder="Nome do assunto..." class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs">
+          <button type="submit" class="text-xs bg-gray-100 text-gray-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-200">+ Assunto</button>
+        </form>
+      </div>
+
+      <details class="border rounded-lg p-3 mb-4"><summary class="font-semibold text-sm cursor-pointer">Montar prova: quantidade de perguntas por assunto</summary><p class="text-xs text-gray-500 my-2">Informe quantas perguntas sortear de cada assunto. Zero deixa o assunto fora da prova. Sem seleção, será usada a quantidade total configurada.</p><div id="exame-assuntos-config"></div><button type="button" onclick="salvarPlanoAssuntos()" class="text-primary font-semibold text-sm">Salvar seleção de assuntos</button></details>
       <form id="exame-nova-pergunta-form" class="space-y-3 border border-gray-200 rounded-xl p-4 mb-5">
         <h3 class="text-xs font-bold text-gray-500 uppercase">Nova Pergunta</h3>
-        <textarea id="exame-pergunta-texto" required rows="2" placeholder="Texto da pergunta..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
-        <textarea id="exame-pergunta-justificativa" rows="2" placeholder="Justificativa (opcional)..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        <textarea data-rich-text id="exame-pergunta-texto" required rows="2" placeholder="Texto da pergunta..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        <select id="exame-pergunta-assunto" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="">Sem assunto</option>
+        </select>
+        <textarea data-rich-text id="exame-pergunta-justificativa" rows="2" placeholder="Justificativa (opcional)..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
 
         <div id="exame-alternativas-container" class="space-y-2"></div>
         <button type="button" onclick="adicionarAlternativaExame()" class="text-xs text-primary font-semibold hover:underline">+ Adicionar alternativa</button>
@@ -52,6 +66,8 @@
         <button type="submit" class="w-full bg-primary text-white text-sm font-medium py-2 rounded-lg">Adicionar Pergunta</button>
       </form>
 
+      <p id="exame-pergunta-status" role="status" class="text-sm text-emerald-700"></p>
+      <button type="button" onclick="document.getElementById('modal-exame-perguntas').classList.add('hidden')" class="border rounded-lg px-4 py-2 mb-3">Concluir e fechar</button>
       <div id="exame-perguntas-lista" class="space-y-2"></div>
     </div>
   </div>
@@ -163,6 +179,7 @@
 
       <!-- Configurações de Quizz e Avaliação -->
       <div id="bloco-quiz-config" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-3">
+        <label class="block text-sm">Quiz da biblioteca<select id="aula-quiz-biblioteca" class="w-full border rounded p-2"><option value="">Questões cadastradas diretamente nesta aula</option></select></label><p class="text-xs text-gray-500">Crie o quiz separadamente no Banco de Questões e escolha aqui onde ele será usado.</p>
         <h4 class="font-bold text-xs text-slate-700">Parâmetros do Questionário</h4>
         
         <div>
@@ -216,6 +233,8 @@
   <div class="bg-white rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
     <h2 class="text-lg font-bold text-gray-800 mb-5">Editar Informações do Curso</h2>
     <form id="form-editar-curso" class="space-y-4">
+      <?php $produtoPrefix = 'ec'; require __DIR__ . '/produto-config.php'; ?>
+      <div id="ec-dados" class="space-y-4">
       
       <div class="grid grid-cols-3 gap-3">
         <div class="col-span-2">
@@ -245,7 +264,7 @@
       </div>
 
       <div class="grid grid-cols-2 gap-3">
-        <div>
+        <div id="ec-campo-carga">
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Carga Horária (h)</label>
           <input type="number" id="ec-carga" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
         </div>
@@ -255,9 +274,20 @@
         </div>
       </div>
 
+      <div class="grid grid-cols-3 gap-3">
+        <div class="col-span-2">
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Frase do Desconto PIX</label>
+          <input type="text" id="ec-frase-pix" maxlength="250" placeholder="Ex.: 5% de desconto pagando no PIX" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">% Desconto PIX</label>
+          <input type="number" id="ec-percentual-pix" min="0" max="100" step="0.01" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Categoria</label>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Categoria/Menu</label>
           <select id="ec-categoria" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="">Sem categoria</option>
           </select>
@@ -357,11 +387,14 @@
         <button type="submit" id="btn-salvar-ec" class="flex-1 bg-primary text-white font-medium py-2.5 rounded-lg">Salvar Alterações</button>
         <button type="button" onclick="fecharModalEditarCurso()" class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg">Cancelar</button>
       </div>
+
+      </div>
     </form>
   </div>
 </div>
 
-<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=12"></script>
+<script src="<?= BASE_PATH ?>/assets/js/produto-admin.js?v=2"></script>
+<script src="<?= BASE_PATH ?>/assets/js/admin.js?v=19"></script>
 <script>
   const cursoAdminId = <?= (int)($_GET['id'] ?? 0) ?>;
   document.addEventListener('DOMContentLoaded', () => carregarCursoAdmin(cursoAdminId));

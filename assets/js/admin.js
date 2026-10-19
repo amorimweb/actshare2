@@ -78,13 +78,50 @@ function renderCursosAdminTable(cursos) {
   `).join('');
 }
 
+// ============ EXAMES/AVALIAÇÃO AVULSOS (/admin/exames) ============
+async function carregarExamesAvulsos() {
+  const tbody = document.getElementById('exames-avulsos-tbody');
+  if (!tbody) return;
+  try {
+    const cursos = await apiFetch(_B() + '/api/cursos');
+    const avulsos = cursos.filter(c => [3, 4].includes(Number(c.modelo_produto)));
+    if (!avulsos.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Nenhum produto de Avaliação/Exame avulso cadastrado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = avulsos.map(c => {
+      let tipoExgl = 'QM';
+      try { tipoExgl = JSON.parse(c.componentes_config || '{}').tipo_exgl || 'QM'; } catch (_) {}
+      const tipo = Number(c.modelo_produto) === 3 ? 'Avaliação' : 'Exame ' + esc(tipoExgl);
+      return `
+        <tr class="hover:bg-slate-50">
+          <td class="px-5 py-3 font-medium text-slate-800">${esc(c.titulo)}</td>
+          <td class="px-5 py-3 text-slate-500">${tipo}</td>
+          <td class="px-5 py-3 text-slate-500">R$ ${Number(c.preco || 0).toFixed(2)}</td>
+          <td class="px-5 py-3">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${c.ativo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}">
+              ${c.ativo ? 'Ativo' : 'Inativo'}
+            </span>
+          </td>
+          <td class="px-5 py-3">
+            <a href="${_B()}/admin/cursos/${c.id}" class="text-xs text-primary hover:underline">Editar</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`;
+  }
+}
+
 function abrirModalNovoCurso() {
-  document.getElementById('modal-titulo').textContent = 'Novo Curso';
+  preencherConfigProduto('curso');
+  document.getElementById('modal-titulo').textContent = 'Novo Produto';
   document.getElementById('curso-id').value    = '';
   document.getElementById('curso-titulo').value = '';
   document.getElementById('curso-codigo').value = '';
   document.getElementById('curso-nome-certificado').value = '';
-  document.getElementById('curso-prazo-acesso').value = '';
+  document.getElementById('curso-prazo-acesso').value = '180';
   document.getElementById('curso-descricao').value = '';
   document.getElementById('curso-thumb').value  = '';
   document.getElementById('curso-carga').value  = '0';
@@ -113,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const id    = document.getElementById('curso-id').value;
       const body  = {
+        ...lerConfigProduto('curso'),
         titulo:              document.getElementById('curso-titulo').value,
         codigo:              document.getElementById('curso-codigo').value.trim().toUpperCase(),
         nome_certificado:    document.getElementById('curso-nome-certificado').value.trim() || null,
@@ -285,7 +323,7 @@ async function carregarCombosAdmin() {
       ? _combosList.map(c => `
           <tr class="hover:bg-gray-50">
             <td class="px-5 py-3 font-medium text-gray-800">${esc(c.titulo)}</td>
-            <td class="px-5 py-3 text-gray-500 text-xs">${(c.cursos || []).map(x => esc(x.titulo)).join(', ')}</td>
+            <td class="px-5 py-3 text-gray-500 text-xs">${(c.cursos || []).map(x => esc(x.titulo) + (x.nivel_hierarquia > 1 ? ` (nível ${x.nivel_hierarquia})` : '')).join(', ')}</td>
             <td class="px-5 py-3 font-semibold text-gray-700">R$ ${parseFloat(c.preco).toFixed(2).replace('.', ',')}</td>
             <td class="px-5 py-3">
               <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${c.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">${c.ativo ? 'Ativo' : 'Inativo'}</span>
@@ -300,14 +338,37 @@ async function carregarCombosAdmin() {
   } catch (e) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-400">Erro: ${e.message}</td></tr>`; }
 }
 
-async function popularSelectCursosCombo(selecionados = []) {
+async function popularSelectCursosCombo(cursosComNivel = []) {
+  // cursosComNivel: [{curso_id, nivel_hierarquia}] dos itens já salvos (edição) ou [] (novo combo)
   if (!_todosCursosCache.length) {
     _todosCursosCache = await apiFetch(_B() + '/api/cursos');
   }
-  const select = document.getElementById('combo-cursos');
-  select.innerHTML = _todosCursosCache
-    .map(c => `<option value="${c.id}" ${selecionados.includes(c.id) ? 'selected' : ''}>${esc(c.titulo)}</option>`)
-    .join('');
+  const niveisPorId = {};
+  cursosComNivel.forEach(c => { niveisPorId[c.curso_id] = c.nivel_hierarquia || 1; });
+
+  const list = document.getElementById('combo-cursos-list');
+  list.innerHTML = _todosCursosCache.map(c => {
+    const marcado = niveisPorId.hasOwnProperty(c.id);
+    const nivel = niveisPorId[c.id] || 1;
+    return `
+      <label class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+        <input type="checkbox" class="combo-curso-check rounded accent-primary" value="${c.id}" ${marcado ? 'checked' : ''} onchange="this.closest('label').querySelector('.combo-curso-nivel').disabled = !this.checked">
+        <span class="flex-1 truncate">${esc(c.titulo)}</span>
+        <span class="text-[10px] text-slate-400 uppercase font-bold">Nível</span>
+        <input type="number" min="1" value="${nivel}" class="combo-curso-nivel w-14 border border-gray-300 rounded px-1.5 py-1 text-xs text-center" ${marcado ? '' : 'disabled'} onclick="event.stopPropagation()">
+      </label>
+    `;
+  }).join('');
+}
+
+function obterCursosNiveisCombo() {
+  return [...document.querySelectorAll('#combo-cursos-list label')]
+    .map(row => ({
+      checkbox: row.querySelector('.combo-curso-check'),
+      nivelInput: row.querySelector('.combo-curso-nivel'),
+    }))
+    .filter(r => r.checkbox.checked)
+    .map(r => ({ id: parseInt(r.checkbox.value), nivel: parseInt(r.nivelInput.value) || 1 }));
 }
 
 async function abrirModalCombo() {
@@ -322,7 +383,7 @@ async function abrirModalCombo() {
   document.getElementById('combo-publico').checked = false;
   document.getElementById('combo-disponivel-loja').checked = true;
   document.getElementById('combo-erro').classList.add('hidden');
-  await popularSelectCursosCombo([]);
+  await popularSelectCursosCombo();
   document.getElementById('modal-combo').classList.remove('hidden');
 }
 
@@ -340,7 +401,7 @@ async function abrirModalEditarCombo(id) {
   document.getElementById('combo-publico').checked = c.publico == 1;
   document.getElementById('combo-disponivel-loja').checked = c.disponivel_loja == 1;
   document.getElementById('combo-erro').classList.add('hidden');
-  await popularSelectCursosCombo((c.cursos || []).map(x => x.curso_id));
+  await popularSelectCursosCombo(c.cursos || []);
   document.getElementById('modal-combo').classList.remove('hidden');
 }
 
@@ -353,8 +414,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const err = document.getElementById('combo-erro');
       btn.disabled = true; err.classList.add('hidden');
 
-      const cursoIds = Array.from(document.getElementById('combo-cursos').selectedOptions).map(o => parseInt(o.value));
-      if (cursoIds.length < 2) {
+      const cursosNiveis = obterCursosNiveisCombo();
+      if (cursosNiveis.length < 2) {
         err.textContent = 'Selecione pelo menos 2 cursos para o combo.';
         err.classList.remove('hidden');
         btn.disabled = false;
@@ -371,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ativo: document.getElementById('combo-ativo').checked ? 1 : 0,
         publico: document.getElementById('combo-publico').checked ? 1 : 0,
         disponivel_loja: document.getElementById('combo-disponivel-loja').checked ? 1 : 0,
-        curso_ids: cursoIds,
+        curso_ids: cursosNiveis,
       };
 
       try {
@@ -611,6 +672,7 @@ async function carregarCursoAdmin(id) {
     document.getElementById('curso-admin-content').classList.remove('hidden');
     document.getElementById('ca-titulo').textContent    = _cursoAdminData.titulo;
     document.getElementById('ca-descricao').textContent = _cursoAdminData.descricao || '';
+    document.getElementById('modulos-admin-list').closest('.bg-white').hidden = [3,4].includes(Number(_cursoAdminData.modelo_produto));
     renderModulosAdmin();
     carregarExamesCurso(id);
   } catch (e) {
@@ -619,14 +681,21 @@ async function carregarCursoAdmin(id) {
 }
 
 // ============ AVALIAÇÃO / EXAME EXEMPLAR GLOBAL (AVALIACAO/QM/AU/TL) ============
-const EXAME_TIPO_LABEL = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
+let _examesConfig = [];
+const EXAME_TIPO_LABEL = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', EM: 'Exame EM', TL: 'Exame TL' };
 
 async function carregarExamesCurso(cursoId) {
   const el = document.getElementById('exames-curso-list');
   if (!el) return;
   try {
-    const exames = await apiFetch(_B() + '/api/admin/cursos/' + cursoId + '/exames');
-    el.innerHTML = exames.map(ex => `
+    const { exames, templates } = await apiFetch(_B() + '/api/admin/cursos/' + cursoId + '/exames');
+    const optsTemplate = (selecionadoId) => '<option value="">Sem template</option>' +
+      templates.map(t => `<option value="${t.id}" ${selecionadoId == t.id ? 'selected' : ''}>${esc(t.nome)}</option>`).join('');
+
+    _examesConfig = exames;
+    const modelo = Number(_cursoAdminData?.modelo_produto || 0);
+    const tiposProduto = modelo === 1 ? [] : [2,3].includes(modelo) ? ['AVALIACAO'] : [JSON.parse(_cursoAdminData?.componentes_config || '{}').tipo_exgl || 'QM'];
+    el.innerHTML = exames.filter(ex => !modelo || tiposProduto.includes(ex.tipo)).map(ex => `
       <div class="border border-gray-200 rounded-xl p-4 space-y-2">
         <label class="flex items-center gap-2 mb-1">
           <input type="checkbox" id="exame-ativo-${ex.tipo}" ${ex.ativo ? 'checked' : ''} class="rounded accent-primary">
@@ -639,6 +708,7 @@ async function carregarExamesCurso(cursoId) {
         <label class="block text-[10px] font-bold text-gray-500 uppercase">Prazo (dias)</label>
         <input type="number" id="exame-prazo-${ex.tipo}" min="1" value="${ex.prazo_dias}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
 
+        ${ex.tipo !== 'AVALIACAO' ? `<label class="block text-xs">Prazo para refazer após reprovação (dias)<input type="number" id="exame-refazer-${ex.tipo}" min="1" value="${ex.prazo_refazer_dias || 365}" class="w-full border rounded p-2"></label>` : ''}
         <label class="block text-[10px] font-bold text-gray-500 uppercase">Nº de Questões / Tempo (min)</label>
         <div class="grid grid-cols-2 gap-1.5">
           <input type="number" id="exame-nqtd-${ex.tipo}" min="1" value="${ex.numero_questoes}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
@@ -654,6 +724,11 @@ async function carregarExamesCurso(cursoId) {
           <input type="number" id="exame-notaval-${ex.tipo}" min="0" value="${ex.nota_corte_valor}" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs">
         </div>
 
+        <label class="block text-[10px] font-bold text-gray-500 uppercase">Template de Certificado</label>
+        <select id="exame-certtemplate-${ex.tipo}" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+          ${optsTemplate(ex.certificado_template_id)}
+        </select>
+
         <button type="button" onclick="abrirModalExamePerguntas(${ex.id || 'null'}, '${EXAME_TIPO_LABEL[ex.tipo]}')"
           ${ex.id ? '' : 'disabled title="Salve o exame primeiro"'}
           class="w-full text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg border ${ex.id ? 'border-primary text-primary hover:bg-primary/5' : 'border-gray-200 text-gray-300 cursor-not-allowed'}">
@@ -667,9 +742,11 @@ async function carregarExamesCurso(cursoId) {
 }
 
 async function salvarExamesCurso() {
-  const tipos = ['AVALIACAO', 'QM', 'AU', 'TL'];
-  const exames = tipos.map(tipo => ({
+  const tipos = ['AVALIACAO', 'QM', 'AU', 'EM', 'TL'];
+  const exames = tipos.filter(tipo => document.getElementById('exame-ativo-' + tipo)).map(tipo => ({
     tipo,
+    assuntos_config: JSON.parse(_examesConfig.find(e => e.tipo === tipo)?.assuntos_config || '{}'),
+    prazo_refazer_dias: parseInt(document.getElementById('exame-refazer-' + tipo)?.value || '365'),
     ativo: document.getElementById('exame-ativo-' + tipo)?.checked ? 1 : 0,
     preco: parseFloat(document.getElementById('exame-preco-' + tipo)?.value || '0'),
     prazo_dias: parseInt(document.getElementById('exame-prazo-' + tipo)?.value || '180'),
@@ -677,6 +754,7 @@ async function salvarExamesCurso() {
     tempo_limite_minutos: parseInt(document.getElementById('exame-tempo-' + tipo)?.value || '60'),
     nota_corte_tipo: document.getElementById('exame-notatipo-' + tipo)?.value || 'percentual',
     nota_corte_valor: parseInt(document.getElementById('exame-notaval-' + tipo)?.value || '70'),
+    certificado_template_id: document.getElementById('exame-certtemplate-' + tipo)?.value || null,
   }));
   try {
     await apiPut(_B() + '/api/admin/cursos/' + cursoAdminId + '/exames', { exames });
@@ -689,6 +767,8 @@ async function salvarExamesCurso() {
 
 // ============ BANCO DE QUESTÕES DO EXAME ============
 let _exameAtualId = null;
+let _examePerguntaEditId = null;
+let _examePerguntasCache = [];
 
 async function abrirModalExamePerguntas(exameCursoId, label) {
   if (!exameCursoId) return;
@@ -696,14 +776,67 @@ async function abrirModalExamePerguntas(exameCursoId, label) {
   document.getElementById('exame-perguntas-titulo').textContent = 'Banco de Questões — ' + label;
   document.getElementById('modal-exame-perguntas').classList.remove('hidden');
   document.getElementById('exame-nova-pergunta-form').reset();
-  await carregarExamePerguntas();
+  await Promise.all([carregarExameAssuntos(), carregarExamePerguntas()]);
 }
+
+let _exameAssuntosCache = [];
+
+async function carregarExameAssuntos() {
+  const lista = document.getElementById('exame-assuntos-lista');
+  const select = document.getElementById('exame-pergunta-assunto');
+  try {
+    _exameAssuntosCache = await apiFetch(_B() + '/api/admin/exame-assuntos?exame_curso_id=' + _exameAtualId);
+    lista.innerHTML = _exameAssuntosCache.length
+      ? _exameAssuntosCache.map(a => `
+          <span class="inline-flex items-center gap-1 text-[11px] bg-gray-100 text-gray-700 rounded-full px-2.5 py-1">
+            ${esc(a.nome)} <span class="text-gray-400">(${a.total_perguntas})</span>
+            <button type="button" onclick="excluirExameAssunto(${a.id})" class="text-gray-400 hover:text-red-500 ml-0.5" title="Excluir assunto">&times;</button>
+          </span>
+        `).join('')
+      : '<span class="text-[11px] text-gray-400">Nenhum assunto cadastrado ainda.</span>';
+    const cfg = JSON.parse(_examesConfig.find(e => e.id == _exameAtualId)?.assuntos_config || '{}');
+    document.getElementById('exame-assuntos-config').innerHTML = _exameAssuntosCache.map(a => `<label class="block text-sm mb-2">${esc(a.nome)} (${a.total_perguntas} disponíveis)<input data-assunto-id="${a.id}" type="number" min="0" max="${a.total_perguntas}" value="${cfg[a.id] || 0}" class="border rounded p-1 ml-2 w-20"></label>`).join('');
+    select.innerHTML = '<option value="">Sem assunto</option>' +
+      _exameAssuntosCache.map(a => `<option value="${a.id}">${esc(a.nome)}</option>`).join('');
+  } catch (e) {
+    lista.innerHTML = `<span class="text-[11px] text-red-500">Erro: ${e.message}</span>`;
+  }
+}
+
+async function excluirExameAssunto(id) {
+  if (!confirm('Excluir este assunto? As perguntas vinculadas a ele ficam sem assunto.')) return;
+  try {
+    await apiDelete(_B() + '/api/admin/exame-assuntos/' + id);
+    await Promise.all([carregarExameAssuntos(), carregarExamePerguntas()]);
+  } catch (e) {
+    alert('Erro ao excluir: ' + e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const formAssunto = document.getElementById('exame-novo-assunto-form');
+  if (formAssunto) {
+    formAssunto.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('exame-assunto-nome').value.trim();
+      if (!nome) return;
+      try {
+        await apiPost(_B() + '/api/admin/exame-assuntos', { exame_curso_id: _exameAtualId, nome });
+        document.getElementById('exame-assunto-nome').value = '';
+        await carregarExameAssuntos();
+      } catch (e2) {
+        alert('Erro ao criar assunto: ' + e2.message);
+      }
+    });
+  }
+});
 
 async function carregarExamePerguntas() {
   const list = document.getElementById('exame-perguntas-lista');
   list.innerHTML = 'Carregando...';
   try {
     const perguntas = await apiFetch(_B() + '/api/admin/exame-perguntas?exame_curso_id=' + _exameAtualId);
+    _examePerguntasCache = perguntas;
     if (!perguntas.length) {
       list.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Nenhuma pergunta cadastrada ainda.</p>';
       return;
@@ -711,8 +844,11 @@ async function carregarExamePerguntas() {
     list.innerHTML = perguntas.map(p => `
       <div class="border border-gray-200 rounded-lg p-3">
         <div class="flex items-start justify-between gap-3">
-          <p class="text-sm font-medium text-gray-800">${esc(p.texto)}</p>
-          <button onclick="excluirExamePergunta(${p.id})" class="text-xs text-red-500 hover:underline shrink-0">Excluir</button>
+          <div>
+            ${p.assunto_nome ? `<span class="inline-block text-[10px] bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 mb-1">${esc(p.assunto_nome)}</span>` : ''}
+            <p class="text-sm font-medium text-gray-800">${esc(p.texto)}</p>
+          </div>
+          <button onclick="editarExamePergunta(${p.id})" class="text-primary text-xs">Editar</button><button type="button" onclick="excluirExamePergunta(${p.id})" class="text-xs text-red-500 hover:underline shrink-0">Excluir</button>
         </div>
         <ul class="mt-2 space-y-1 text-xs text-gray-600">
           ${p.opcoes.map(o => `<li class="${o.correta ? 'text-emerald-600 font-semibold' : ''}">${o.correta ? '✓' : '•'} ${esc(o.texto)}</li>`).join('')}
@@ -724,15 +860,15 @@ async function carregarExamePerguntas() {
   }
 }
 
-function adicionarAlternativaExame() {
+function adicionarAlternativaExame(texto = '', correta = false) {
   const container = document.getElementById('exame-alternativas-container');
   const idx = container.children.length;
   if (idx >= 5) return;
   const div = document.createElement('div');
   div.className = 'flex items-center gap-2';
   div.innerHTML = `
-    <input type="checkbox" class="exame-alt-correta accent-primary">
-    <input type="text" class="exame-alt-texto flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Alternativa ${idx + 1}" required>
+    <input type="checkbox" ${correta ? 'checked' : ''} class="exame-alt-correta accent-primary">
+    <input data-rich-text type="text" value="${esc(texto)}" class="exame-alt-texto flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs" placeholder="Alternativa ${idx + 1}" required>
   `;
   container.appendChild(div);
 }
@@ -753,6 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const texto = document.getElementById('exame-pergunta-texto').value.trim();
+      const assuntoId = document.getElementById('exame-pergunta-assunto').value || null;
       const justificativa = document.getElementById('exame-pergunta-justificativa').value.trim();
       const opcoes = [...document.querySelectorAll('#exame-alternativas-container > div')].map(div => ({
         texto: div.querySelector('.exame-alt-texto').value.trim(),
@@ -761,13 +898,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const err = document.getElementById('exame-pergunta-erro');
       err.classList.add('hidden');
       try {
-        await apiPost(_B() + '/api/admin/exame-perguntas', {
-          exame_curso_id: _exameAtualId, texto, justificativa, opcoes,
-        });
+        const payload = {exame_curso_id: _exameAtualId, texto, assunto_id: assuntoId, justificativa, opcoes};
+        if (_examePerguntaEditId) await apiPut(_B() + '/api/admin/exame-perguntas/' + _examePerguntaEditId, payload);
+        else await apiPost(_B() + '/api/admin/exame-perguntas', payload);
+        _examePerguntaEditId = null;
         form.reset();
         document.getElementById('exame-alternativas-container').innerHTML = '';
         adicionarAlternativaExame();
         adicionarAlternativaExame();
+        document.getElementById('exame-pergunta-status').textContent = 'Pergunta salva. Adicione a próxima ou conclua o cadastro.';
         carregarExamePerguntas();
       } catch (ex) {
         err.textContent = ex.message;
@@ -855,6 +994,7 @@ async function excluirModulo(id) {
 
 // Aulas
 function abrirModalAula(moduloId) {
+  carregarBibliotecaQuizAula();
   document.getElementById('aula-modal-titulo').textContent = 'Nova Aula';
   document.getElementById('aula-id').value       = '';
   document.getElementById('aula-modulo-id').value = moduloId;
@@ -886,6 +1026,7 @@ function editarAulaAdmin(aulaId, moduloId) {
   const a = mod.aulas.find(l => l.id === aulaId);
   if (!a) return;
   
+  carregarBibliotecaQuizAula(a.quiz_id);
   document.getElementById('aula-modal-titulo').textContent = 'Editar Aula';
   document.getElementById('aula-id').value       = a.id;
   document.getElementById('aula-modulo-id').value = moduloId;
@@ -974,6 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tipo:                 document.getElementById('aula-tipo').value,
         e_prova:              parseInt(document.getElementById('aula-e-prova').value) || 0,
         publica:              document.getElementById('aula-publica').checked ? 1 : 0,
+        quiz_id: document.getElementById('aula-quiz-biblioteca').value || null,
         quizz_qtd_perguntas:  parseInt(document.getElementById('aula-quizz-qtd-perguntas').value) || 1,
         exemplar_global:      document.getElementById('aula-exemplar-global').checked ? 1 : 0,
         nota_corte_tipo:      document.getElementById('aula-nota-corte-tipo').value,
@@ -1041,6 +1183,8 @@ async function editarCursoInfo() {
   document.getElementById('ec-descricao').value         = _cursoAdminData.descricao || '';
   document.getElementById('ec-carga').value             = _cursoAdminData.carga_horaria_horas || 0;
   document.getElementById('ec-preco').value             = _cursoAdminData.preco || 0;
+  document.getElementById('ec-frase-pix').value          = _cursoAdminData.frase_desconto_pix || '';
+  document.getElementById('ec-percentual-pix').value     = _cursoAdminData.percentual_desconto_pix !== null ? _cursoAdminData.percentual_desconto_pix : '';
   document.getElementById('ec-categoria').value         = _cursoAdminData.categoria_id || '';
   document.getElementById('ec-instrutor').value         = _cursoAdminData.instrutor_id || '';
   document.getElementById('ec-thumb').value             = _cursoAdminData.thumb_url || '';
@@ -1066,6 +1210,7 @@ async function editarCursoInfo() {
   document.getElementById('ec-vis-condicoes').checked        = _cursoAdminData.vis_condicoes != 0;
 
   document.getElementById('ec-form-erro').classList.add('hidden');
+  await preencherConfigProduto('ec', _cursoAdminData);
   document.getElementById('modal-editar-curso').classList.remove('hidden');
 }
 
@@ -1083,6 +1228,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = true; err.classList.add('hidden');
 
       const body = {
+        ...lerConfigProduto('ec'),
         titulo:              document.getElementById('ec-titulo').value,
         codigo:              document.getElementById('ec-codigo').value.trim().toUpperCase(),
         nome_certificado:    document.getElementById('ec-nome-certificado').value.trim() || null,
@@ -1091,6 +1237,8 @@ document.addEventListener('DOMContentLoaded', () => {
         thumb_url:           document.getElementById('ec-thumb').value || null,
         carga_horaria_horas: parseInt(document.getElementById('ec-carga').value) || 0,
         preco:               parseFloat(document.getElementById('ec-preco').value) || 0,
+        frase_desconto_pix:      document.getElementById('ec-frase-pix').value.trim() || null,
+        percentual_desconto_pix: document.getElementById('ec-percentual-pix').value !== '' ? parseFloat(document.getElementById('ec-percentual-pix').value) : null,
         categoria_id:        document.getElementById('ec-categoria').value || null,
         instrutor_id:        document.getElementById('ec-instrutor').value || null,
         ativo:               document.getElementById('ec-ativo').checked ? 1 : 0,
@@ -1781,7 +1929,7 @@ function renderAlunosAdminTable(linhas) {
   }).join('');
 }
 
-const EXAME_TIPO_LABEL_PROVAS = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', TL: 'Exame TL' };
+const EXAME_TIPO_LABEL_PROVAS = { AVALIACAO: 'Avaliação', QM: 'Exame QM', AU: 'Exame AU', EM: 'Exame EM', TL: 'Exame TL' };
 
 async function abrirProvasAlunoAdmin(matriculaId) {
   document.getElementById('modal-provas-aluno').classList.remove('hidden');
@@ -1836,4 +1984,36 @@ async function editarPrazoAlunoAdmin(matriculaId, dataAtual) {
   } catch (e) {
     alert('Erro ao atualizar prazo: ' + e.message);
   }
+}
+
+async function carregarBibliotecaQuizAula(id = '') {
+ const select = document.getElementById('aula-quiz-biblioteca');
+ const rows = await apiFetch(_B() + '/api/admin/quizzes');
+ select.replaceChildren(new Option('Questões cadastradas diretamente nesta aula', ''));
+ rows.forEach(q => select.add(new Option(q.nome + ' (' + q.total_perguntas + ' perguntas)', q.id)));
+ select.value = id || '';
+}
+
+async function salvarPlanoAssuntos() {
+ const ex = _examesConfig.find(e => e.id == _exameAtualId); if (!ex) return;
+ const plano = {};
+ for (const input of document.querySelectorAll('[data-assunto-id]')) {
+   if (!input.reportValidity()) return;
+   if (Number(input.value)) plano[input.dataset.assuntoId] = Number(input.value);
+ }
+ const body = {...ex, assuntos_config: plano};
+ try { await apiPut(_B() + '/api/admin/cursos/' + cursoAdminId + '/exames', {exames:[body]}); ex.assuntos_config = JSON.stringify(plano); document.getElementById('exame-pergunta-status').textContent = 'Seleção de assuntos salva.'; }
+ catch (e) { document.getElementById('exame-pergunta-status').textContent = e.message; }
+}
+
+function editarExamePergunta(id) {
+ const p = _examePerguntasCache.find(p => p.id == id); if (!p) return;
+ _examePerguntaEditId = id;
+ document.getElementById('exame-pergunta-texto').value = p.texto;
+ document.getElementById('exame-pergunta-justificativa').value = p.justificativa || '';
+ document.getElementById('exame-pergunta-assunto').value = p.assunto_id || '';
+ document.getElementById('exame-alternativas-container').innerHTML = '';
+ p.opcoes.forEach(o => adicionarAlternativaExame(o.texto, Number(o.correta) === 1));
+ document.getElementById('exame-pergunta-status').textContent = 'Editando pergunta. Salve as alterações para continuar.';
+ document.getElementById('exame-nova-pergunta-form').scrollIntoView({block:'nearest'});
 }
