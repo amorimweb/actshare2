@@ -540,7 +540,7 @@ function renderQuizDinamico(container, quizData, quizId, matriculaId) {
   const listHtml = perguntas.map((p, i) => {
     return `
       <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-4">
-        <p class="font-bold text-gray-800 text-xs sm:text-sm mb-3 leading-relaxed">${i + 1}. ${esc(p.texto)}</p>
+        <p class="font-bold text-gray-800 text-xs sm:text-sm mb-3 leading-relaxed"><span>${i + 1}.</span> ${esc(p.texto)}</p>
         <div class="space-y-2" id="opcoes-${p.id}">
           ${p.opcoes.map(o => {
             let labelClass = "flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all text-xs";
